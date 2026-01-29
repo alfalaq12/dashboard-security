@@ -28,7 +28,8 @@ var (
 	// Failed password for invalid user admin from 192.168.1.100 port 22 ssh2
 	failedPasswordRegex = regexp.MustCompile(`Failed password for (?:invalid user )?(\S+) from (\S+) port (\d+)`)
 	// Accepted password for user from 192.168.1.100 port 22 ssh2
-	acceptedPasswordRegex = regexp.MustCompile(`Accepted (?:password|publickey) for (\S+) from (\S+) port (\d+)`)
+	// Using \s+ to be more flexible with spaces
+	acceptedPasswordRegex = regexp.MustCompile(`Accepted\s+(?:password|publickey)\s+for\s+(\S+)\s+from\s+(\S+)\s+port\s+(\d+)`)
 )
 
 // NewSSHCollector creates a new SSH log collector

@@ -1,0 +1,82 @@
+{
+  "103.20.10.5": {
+    "country": "Indonesia",
+    "countryCode": "ID",
+    "city": "Jakarta",
+    "lat": -6.1751,
+    "lon": 106.865,
+    "cachedAt": "2026-01-29T20:23:56.454Z"
+  },
+  "45.155.205.10": {
+    "country": "Russia",
+    "countryCode": "RU",
+    "city": "Moscow",
+    "lat": 55.7558,
+    "lon": 37.6173,
+    "cachedAt": "2026-01-29T20:23:56.461Z"
+  },
+  "116.203.20.1": {
+    "country": "China",
+    "countryCode": "CN",
+    "city": "Beijing",
+    "lat": 39.9042,
+    "lon": 116.4074,
+    "cachedAt": "2026-01-29T20:23:56.461Z"
+  },
+  "201.50.40.20": {
+    "country": "Brazil",
+    "countryCode": "BR",
+    "city": "Sao Paulo",
+    "lat": -23.5505,
+    "lon": -46.6333,
+    "cachedAt": "2026-01-29T20:23:56.461Z"
+  },
+  "192.168.99.100": {
+    "country": "United States",
+    "countryCode": "US",
+    "city": "New York",
+    "lat": 40.7128,
+    "lon": -74.006,
+    "cachedAt": "2026-01-29T20:23:56.461Z"
+  },
+  "185.100.50.2": {
+    "country": "Germany",
+    "countryCode": "DE",
+    "city": "Berlin",
+    "lat": 52.52,
+    "lon": 13.405,
+    "cachedAt": "2026-01-29T20:23:56.461Z"
+  },
+  "48.20.10.5": {
+    "country": "United States",
+    "countryCode": "US",
+    "city": "San Francisco",
+    "lat": 37.7749,
+    "lon": -122.4194,
+    "cachedAt": "2026-01-29T20:23:56.461Z"
+  },
+  "80.10.20.30": {
+    "country": "United Kingdom",
+    "countryCode": "GB",
+    "city": "London",
+    "lat": 51.5074,
+    "lon": -0.1278,
+    "cachedAt": "2026-01-29T20:23:56.461Z"
+  },
+  "202.10.5.1": {
+    "country": "India",
+    "countryCode": "IN",
+    "city": "Mumbai",
+    "lat": 19.076,
+    "lon": 72.8777,
+    "cachedAt": "2026-01-29T20:23:56.461Z"
+  },
+  "120.50.40.1": {
+    "country": "North Korea",
+    "countryCode": "KP",
+    "city": "Pyongyang",
+    "lat": 39.0392,
+    "lon": 125.7625,
+    "cachedAt": "2026-01-29T20:23:56.461Z"
+  }
+}

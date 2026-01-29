@@ -71,7 +71,7 @@ export default function HalamanSecurity() {
                 // generate chart data dari attackers
                 if (json?.attackers) {
                     const top5 = json.attackers.slice(0, 5).map((a: Attacker) => ({
-                        name: a.ip.split('.').slice(-2).join('.'), // ambil 2 oktet terakhir
+                        name: a.ip, // Full IP
                         jumlah: a.failedAttempts
                     }));
                     setChartData(top5);
@@ -192,7 +192,7 @@ export default function HalamanSecurity() {
                             <BarChart data={chartData} layout="vertical">
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                                 <XAxis type="number" stroke={WARNA.gray} fontSize={12} />
-                                <YAxis type="category" dataKey="name" stroke={WARNA.gray} fontSize={12} width={80} />
+                                <YAxis type="category" dataKey="name" stroke={WARNA.gray} fontSize={12} width={110} />
                                 <Tooltip
                                     contentStyle={{
                                         background: '#1a1a24',

@@ -38,6 +38,8 @@ interface ServiceInfo {
     name: string;
     status: string;
     active: boolean;
+    cpu?: number;
+    memory?: number;
 }
 
 interface NodeServices {
@@ -128,7 +130,7 @@ function CircularGauge({ value, color, size = 80, strokeWidth = 8, label }: {
                     fontSize="16"
                     fontWeight="700"
                 >
-                    {value}%
+                    {Math.round(value)}%
                 </text>
             </svg>
             <div className="gauge-label">{label}</div>
@@ -207,14 +209,17 @@ export default function HalamanHealth() {
 
     if (loading) {
         return (
-            <div className="loading">
-                <div className="spinner"></div>
+            <div className="premium-loading">
+                <div className="loading-content">
+                    <div className="loading-spinner"></div>
+                    <p>Loading Health Data...</p>
+                </div>
             </div>
         );
     }
 
     return (
-        <>
+        <div className="premium-dashboard">
             <div className="page-header">
                 <h2>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 10 }}>
@@ -312,7 +317,7 @@ export default function HalamanHealth() {
                                     </div>
                                     <div className="server-quick-stats">
                                         <div className="quick-stat">
-                                            <span className="qs-value" style={{ color: server.metrics.cpu > 70 ? WARNA.orange : WARNA.green }}>{server.metrics.cpu}%</span>
+                                            <span className="qs-value" style={{ color: server.metrics.cpu > 70 ? WARNA.orange : WARNA.green }}>{Math.round(server.metrics.cpu)}%</span>
                                             <span className="qs-label">CPU</span>
                                         </div>
                                     </div>
@@ -376,57 +381,6 @@ export default function HalamanHealth() {
                                 />
                             </div>
 
-                            {/* Metric Bars */}
-                            <div className="metric-bars">
-                                <div className="metric-bar-item">
-                                    <div className="bar-header">
-                                        <span className="bar-label">CPU Usage</span>
-                                        <span className="bar-value">{selectedServer.metrics.cpu}%</span>
-                                    </div>
-                                    <div className="bar-track">
-                                        <div
-                                            className="bar-fill"
-                                            style={{
-                                                width: `${selectedServer.metrics.cpu}%`,
-                                                background: `linear-gradient(90deg, ${WARNA.green}, ${selectedServer.metrics.cpu > 70 ? WARNA.orange : WARNA.green})`
-                                            }}
-                                        ></div>
-                                    </div>
-                                </div>
-
-                                <div className="metric-bar-item">
-                                    <div className="bar-header">
-                                        <span className="bar-label">Memory Usage</span>
-                                        <span className="bar-value">{selectedServer.metrics.memory}%</span>
-                                    </div>
-                                    <div className="bar-track">
-                                        <div
-                                            className="bar-fill"
-                                            style={{
-                                                width: `${selectedServer.metrics.memory}%`,
-                                                background: `linear-gradient(90deg, ${WARNA.blue}, ${selectedServer.metrics.memory > 70 ? WARNA.orange : WARNA.blue})`
-                                            }}
-                                        ></div>
-                                    </div>
-                                </div>
-
-                                <div className="metric-bar-item">
-                                    <div className="bar-header">
-                                        <span className="bar-label">Disk Usage</span>
-                                        <span className="bar-value">{selectedServer.metrics.disk}%</span>
-                                    </div>
-                                    <div className="bar-track">
-                                        <div
-                                            className="bar-fill"
-                                            style={{
-                                                width: `${selectedServer.metrics.disk}%`,
-                                                background: `linear-gradient(90deg, ${WARNA.primary}, ${selectedServer.metrics.disk > 80 ? WARNA.orange : WARNA.primary})`
-                                            }}
-                                        ></div>
-                                    </div>
-                                </div>
-                            </div>
-
                             {/* Services Status */}
                             {services && services.services.length > 0 && (
                                 <div className="services-section">
@@ -436,32 +390,43 @@ export default function HalamanHealth() {
                                                 <circle cx="12" cy="12" r="3" />
                                                 <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
                                             </svg>
-                                            Services Terdeteksi
+                                            Status Services ({services.summary.running}/{services.summary.total} Running)
                                         </h4>
-                                        <span className="services-count">
-                                            {services.summary.running} / {services.summary.total} running
-                                        </span>
-                                    </div>
-                                    <div className="services-grid">
-                                        {services.services.slice(0, 12).map((svc) => (
-                                            <div key={svc.name} className={`service-item ${svc.active ? 'running' : 'stopped'}`}>
-                                                <span className="service-dot"></span>
-                                                <span className="service-name">{svc.name}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    {services.services.length > 12 && (
-                                        <div className="services-more">
-                                            +{services.services.length - 12} service lainnya
+                                        <div className="table-header-labels">
+                                            <span>Service</span>
+                                            <span>CPU</span>
+                                            <span>Mem</span>
+                                            <span>Status</span>
                                         </div>
-                                    )}
+                                    </div>
+                                    <div className="services-grid full-list">
+                                        {services.services
+                                            .sort((a, b) => (b.cpu || 0) - (a.cpu || 0))
+                                            .map((svc) => (
+                                                <div key={svc.name} className={`service-item-row ${svc.active ? 'running' : 'stopped'}`}>
+                                                    <div className="service-col name">
+                                                        <span className="service-dot"></span>
+                                                        <span className="service-name">{svc.name}</span>
+                                                    </div>
+                                                    <div className="service-col metric">
+                                                        {(svc.cpu || 0).toFixed(1)}%
+                                                    </div>
+                                                    <div className="service-col metric">
+                                                        {(svc.memory || 0).toFixed(0)} MB
+                                                    </div>
+                                                    <div className="service-col status">
+                                                        {svc.active ? 'Run' : 'Stop'}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                    </div>
                                 </div>
                             )}
 
-                            {/* Info */}
+                            {/* Detail Footer */}
                             <div className="detail-footer">
                                 <div className="info-item">
-                                    <span className="info-label">OS</span>
+                                    <span className="info-label">OS System</span>
                                     <span className="info-value">{selectedServer.os}</span>
                                 </div>
                                 <div className="info-item">
@@ -480,7 +445,7 @@ export default function HalamanHealth() {
                         </div>
                     )}
                 </div>
-            </div >
+            </div>
 
             <style jsx>{`
                 .live-badge {
@@ -488,6 +453,7 @@ export default function HalamanHealth() {
                     align-items: center;
                     gap: 6px;
                     color: ${WARNA.green};
+                    font-size: 0.85rem;
                 }
 
                 .live-dot {
@@ -507,22 +473,74 @@ export default function HalamanHealth() {
                     display: grid;
                     grid-template-columns: 320px 1fr;
                     gap: 20px;
+                    margin-top: 24px;
                 }
 
                 @media (max-width: 900px) {
                     .health-layout { grid-template-columns: 1fr; }
                 }
 
+                .stats-grid {
+                    display: grid;
+                    grid-template-columns: repeat(4, 1fr);
+                    gap: 20px;
+                    margin-bottom: 24px;
+                }
+                
+                @media (max-width: 768px) {
+                    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+                }
+
+                .stat-card {
+                    background: var(--bg-card);
+                    border: 1px solid var(--border-main);
+                    border-radius: 16px;
+                    padding: 20px;
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                }
+
+                .stat-icon {
+                    width: 48px;
+                    height: 48px;
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .stat-info .label {
+                    color: var(--text-gray);
+                    font-size: 0.85rem;
+                    margin-bottom: 4px;
+                }
+
+                .stat-info .value {
+                    font-size: 1.5rem;
+                    font-weight: 700;
+                    color: var(--text-white);
+                }
+                
+                .value.success { color: ${WARNA.green}; }
+                .value.warning { color: ${WARNA.orange}; }
+                .value.danger { color: ${WARNA.red}; }
+
                 .server-list-card, .server-detail-card {
                     background: var(--bg-card);
                     border: 1px solid var(--border-main);
                     border-radius: 16px;
                     overflow: hidden;
+                    display: flex;
+                    flex-direction: column;
+                    height: calc(100vh - 250px);
+                    min-height: 500px;
                 }
 
                 .card-header {
                     padding: 16px 20px;
                     border-bottom: 1px solid var(--border-main);
+                    flex-shrink: 0;
                 }
 
                 .card-header h3 {
@@ -535,8 +553,8 @@ export default function HalamanHealth() {
 
                 .server-list {
                     padding: 8px;
-                    max-height: 500px;
                     overflow-y: auto;
+                    flex: 1;
                 }
 
                 .server-item {
@@ -547,6 +565,7 @@ export default function HalamanHealth() {
                     border-radius: 12px;
                     cursor: pointer;
                     transition: all 0.2s;
+                    margin-bottom: 4px;
                 }
 
                 .server-item:hover {
@@ -599,132 +618,139 @@ export default function HalamanHealth() {
 
                 .qs-label {
                     font-size: 0.7rem;
-                    color: var(--text-muted);
-                    text-transform: uppercase;
+                    color: var(--text-gray);
                 }
-
-                .server-detail-card {
-                    padding: 24px;
-                }
-
+                
                 .detail-header {
+                    padding: 24px;
                     display: flex;
                     justify-content: space-between;
                     align-items: flex-start;
-                    margin-bottom: 24px;
+                    border-bottom: 1px solid var(--border-main);
                 }
-
-                .detail-title h3 {
-                    font-size: 1.5rem;
-                    margin: 8px 0 4px;
-                }
-
-                .hostname {
-                    font-size: 0.9rem;
-                    color: var(--text-muted);
-                }
-
+                
                 .status-badge {
                     display: inline-block;
-                    padding: 4px 12px;
+                    padding: 4px 10px;
                     border-radius: 20px;
                     font-size: 0.75rem;
                     font-weight: 600;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
+                    margin-bottom: 8px;
                 }
-
+                
+                .detail-title h3 {
+                    font-size: 1.5rem;
+                    margin: 0 0 4px 0;
+                }
+                
+                .hostname {
+                    color: var(--text-gray);
+                    font-family: monospace;
+                    font-size: 0.9rem;
+                }
+                
                 .uptime-badge {
                     display: flex;
                     align-items: center;
                     gap: 6px;
-                    background: var(--bg-hover);
-                    padding: 8px 14px;
+                    background: rgba(255, 255, 255, 0.05);
+                    padding: 6px 12px;
                     border-radius: 8px;
-                    font-size: 0.85rem;
-                    color: var(--text-gray);
+                    color: var(--text-white);
+                    font-size: 0.9rem;
                 }
 
                 .gauges-row {
                     display: flex;
-                    justify-content: center;
-                    gap: 40px;
-                    padding: 30px 0;
-                    background: linear-gradient(180deg, transparent 0%, rgba(124, 92, 255, 0.05) 50%, transparent 100%);
-                    border-radius: 16px;
-                    margin-bottom: 24px;
-                }
-
-                .metric-bars {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 16px;
-                    margin-bottom: 24px;
-                }
-
-                .metric-bar-item {
-                    background: var(--bg-hover);
-                    padding: 14px 18px;
-                    border-radius: 12px;
-                }
-
-                .bar-header {
-                    display: flex;
-                    justify-content: space-between;
-                    margin-bottom: 8px;
-                }
-
-                .bar-label {
-                    font-size: 0.85rem;
-                    color: var(--text-gray);
-                }
-
-                .bar-value {
-                    font-size: 0.85rem;
-                    font-weight: 600;
-                }
-
-                .bar-track {
-                    height: 8px;
-                    background: rgba(255,255,255,0.1);
-                    border-radius: 4px;
-                    overflow: hidden;
-                }
-
-                .bar-fill {
-                    height: 100%;
-                    border-radius: 4px;
-                    transition: width 0.6s ease;
-                }
-
-                .detail-footer {
-                    display: flex;
-                    gap: 24px;
-                    padding-top: 16px;
-                    border-top: 1px solid var(--border-main);
-                }
-
-                .info-item {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 2px;
-                }
-
-                .info-label {
-                    font-size: 0.75rem;
-                    color: var(--text-muted);
-                    text-transform: uppercase;
-                }
-
-                .info-value {
-                    font-size: 0.9rem;
-                    font-weight: 500;
+                    justify-content: space-around;
+                    padding: 30px 20px;
+                    background: rgba(0, 0, 0, 0.2);
+                    border-bottom: 1px solid var(--border-main);
                 }
 
                 .services-section {
-                    margin-top: 20px;
-                    padding-top: 16px;
+                    padding: 24px;
+                    flex: 1;
+                    min-height: 0;
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .detail-footer {
+                    padding: 16px 24px;
                     border-top: 1px solid var(--border-main);
+                    display: flex;
+                    gap: 32px;
+                    background: rgba(0, 0, 0, 0.2);
+                }
+                
+                .info-item {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
+                }
+                
+                .info-label {
+                    font-size: 0.75rem;
+                    color: var(--text-gray);
+                    text-transform: uppercase;
+                }
+                
+                .info-value {
+                    color: var(--text-white);
+                    font-weight: 500;
+                }
+
+                .no-selection {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    color: var(--text-gray);
+                }
+                
+                .no-selection svg {
+                    margin-bottom: 16px;
+                }
+                
+                .empty-list {
+                    text-align: center;
+                    padding: 40px 0;
+                    color: var(--text-muted);
+                }
+
+                /* Custom Scrollbar */
+                ::-webkit-scrollbar {
+                    width: 6px;
+                    height: 6px;
+                }
+                ::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                ::-webkit-scrollbar-thumb {
+                    background: rgba(255, 255, 255, 0.1);
+                    border-radius: 3px;
+                }
+                ::-webkit-scrollbar-thumb:hover {
+                    background: rgba(255, 255, 255, 0.2);
+                }
+
+                /* Services Table Styles */
+                .full-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
+                    max-height: 600px;
+                    overflow-y: auto;
+                    padding-right: 4px;
+                }
+                .full-list::-webkit-scrollbar {
+                    width: 4px;
+                }
+                .full-list::-webkit-scrollbar-thumb {
+                    background: rgba(255, 255, 255, 0.1);
+                    border-radius: 4px;
                 }
 
                 .services-header {
@@ -733,90 +759,70 @@ export default function HalamanHealth() {
                     align-items: center;
                     margin-bottom: 12px;
                 }
-
                 .services-header h4 {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    font-size: 0.9rem;
-                    font-weight: 600;
                     margin: 0;
-                }
-
-                .services-count {
-                    font-size: 0.75rem;
-                    color: ${WARNA.green};
-                    background: rgba(61, 214, 140, 0.15);
-                    padding: 4px 10px;
-                    border-radius: 12px;
-                }
-
-                .services-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                    font-size: 0.95rem;
+                    display: flex;
+                    align-items: center;
                     gap: 8px;
                 }
 
-                .service-item {
-                    display: flex;
-                    align-items: center;
-                    gap: 6px;
-                    padding: 8px 10px;
-                    background: var(--bg-hover);
-                    border-radius: 8px;
-                    font-size: 0.8rem;
-                }
-
-                .service-item.running .service-dot {
-                    background: ${WARNA.green};
-                    box-shadow: 0 0 8px ${WARNA.green}60;
-                }
-
-                .service-item.stopped .service-dot {
-                    background: ${WARNA.red};
-                    box-shadow: 0 0 8px ${WARNA.red}60;
-                }
-
-                .service-dot {
-                    width: 8px;
-                    height: 8px;
-                    border-radius: 50%;
-                    flex-shrink: 0;
-                }
-
-                .service-name {
-                    color: var(--text-gray);
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
-                }
-
-                .service-item.running .service-name {
-                    color: var(--text-white);
-                }
-
-                .services-more {
-                    text-align: center;
-                    padding: 8px;
-                    color: var(--text-muted);
+                .table-header-labels {
+                    display: grid;
+                    grid-template-columns: 2fr 1fr 1fr 0.8fr;
+                    gap: 10px;
+                    width: 50%;
                     font-size: 0.75rem;
-                }
-
-                .empty-list, .no-selection {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 40px;
                     color: var(--text-muted);
-                    text-align: center;
+                    text-align: right;
+                    padding-right: 12px;
+                }
+                .table-header-labels span:first-child { text-align: left; }
+
+                .service-item-row {
+                    display: grid;
+                    grid-template-columns: 2fr 1fr 1fr 0.8fr;
+                    align-items: center;
+                    gap: 10px;
+                    padding: 8px 12px;
+                    background: rgba(255, 255, 255, 0.03);
+                    border-radius: 8px;
+                    font-size: 0.9rem;
+                    transition: background 0.2s;
                 }
 
-                .empty-list p, .no-selection p {
-                    margin: 12px 0 0;
-                    font-size: 0.9rem;
+                .service-item-row:hover {
+                    background: rgba(255, 255, 255, 0.06);
                 }
+
+                .service-col.name {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    text-align: left;
+                    overflow: hidden;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                }
+
+                .service-col.metric {
+                    text-align: right;
+                    font-family: monospace;
+                    color: var(--text-gray);
+                    font-size: 0.85rem;
+                }
+
+                .service-col.status {
+                    text-align: right;
+                    font-size: 0.8rem;
+                    font-weight: 600;
+                }
+
+                .service-item-row.running .service-dot { background: ${WARNA.green}; box-shadow: 0 0 6px ${WARNA.green}; width: 8px; height: 8px; border-radius: 50%; }
+                .service-item-row.stopped .service-dot { background: ${WARNA.red}; width: 8px; height: 8px; border-radius: 50%; }
+                .service-item-row.running .status { color: ${WARNA.green}; }
+                .service-item-row.stopped .status { color: ${WARNA.red}; }
             `}</style>
-        </>
+        </div>
     );
 }

@@ -215,12 +215,24 @@ export default function HalamanGeo() {
                                     <stop offset="100%" stopColor="#ff5a5a" stopOpacity="0.3" />
                                 </radialGradient>
                                 <filter id="glow">
-                                    <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+                                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
                                     <feMerge>
                                         <feMergeNode in="coloredBlur" />
                                         <feMergeNode in="SourceGraphic" />
                                     </feMerge>
                                 </filter>
+                                <filter id="mapGlow" x="-50%" y="-50%" width="200%" height="200%">
+                                    <feGaussianBlur stdDeviation="2" result="blur" />
+                                    <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0  0 0 0 0 0.8  0 0 0 0 0.8  0 0 0 1 0" result="cyanBlur" />
+                                    <feMerge>
+                                        <feMergeNode in="cyanBlur" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
+                                </filter>
+                                <pattern id="dots" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
+                                    <rect x="0" y="0" width="4" height="4" fill="rgba(20,20,30,0.8)" />
+                                    <circle cx="2" cy="2" r="0.5" fill="rgba(80,100,150,0.5)" />
+                                </pattern>
                             </defs>
 
                             <ZoomableGroup
@@ -238,12 +250,19 @@ export default function HalamanGeo() {
                                                 <Geography
                                                     key={geo.rsmKey}
                                                     geography={geo}
-                                                    fill={isHighlighted ? '#3a3a5a' : '#252535'}
-                                                    stroke="#3a3a4a"
-                                                    strokeWidth={0.3}
+                                                    fill={isHighlighted ? 'rgba(0, 210, 211, 0.2)' : 'url(#dots)'}
+                                                    stroke={isHighlighted ? '#00d2d3' : 'rgba(80, 100, 150, 0.3)'}
+                                                    strokeWidth={isHighlighted ? 1 : 0.5}
                                                     style={{
                                                         default: { outline: 'none' },
-                                                        hover: { fill: '#353550', outline: 'none', transition: 'all 0.3s' },
+                                                        hover: {
+                                                            fill: 'rgba(0, 210, 211, 0.15)',
+                                                            stroke: '#00d2d3',
+                                                            strokeWidth: 1,
+                                                            outline: 'none',
+                                                            transition: 'all 0.3s',
+                                                            filter: 'url(#mapGlow)'
+                                                        },
                                                         pressed: { outline: 'none' }
                                                     }}
                                                 />
@@ -252,17 +271,16 @@ export default function HalamanGeo() {
                                     }
                                 </Geographies>
 
-                                {/* Connection lines */}
-                                {data?.markers?.slice(0, 20).map((marker) => (
-                                    <line
-                                        key={`line-${marker.ip}`}
-                                        x1={0}
-                                        y1={0}
-                                        x2={marker.lon}
-                                        y2={marker.lat}
-                                        stroke="rgba(255, 90, 90, 0.1)"
+                                {/* Connection lines - curved */}
+                                {data?.markers?.slice(0, 20).map((marker, i) => (
+                                    <path
+                                        key={`line-${marker.ip}-${i}`}
+                                        d={`M0,0 Q${marker.lon / 2},${marker.lat / 2 - 20} ${marker.lon},${marker.lat}`}
+                                        fill="none"
+                                        stroke="url(#markerGrad)"
                                         strokeWidth={0.5}
-                                        strokeDasharray="2,2"
+                                        strokeOpacity={0.4}
+                                        strokeDasharray="4 4"
                                     />
                                 ))}
 
@@ -273,31 +291,29 @@ export default function HalamanGeo() {
                                         onMouseEnter={() => setHoveredMarker(marker)}
                                         onMouseLeave={() => setHoveredMarker(null)}
                                     >
-                                        {/* Pulse ring */}
-                                        <circle
-                                            r={getMarkerSize(marker.attacks) + 4}
-                                            fill="none"
-                                            stroke={WARNA.red}
-                                            strokeWidth={1}
-                                            opacity={0.3}
-                                            className="pulse-ring"
-                                        />
-                                        {/* Main marker */}
-                                        <circle
-                                            r={getMarkerSize(marker.attacks)}
-                                            fill={WARNA.red}
-                                            fillOpacity={getMarkerOpacity(marker.attacks)}
-                                            stroke="#fff"
-                                            strokeWidth={1}
-                                            filter="url(#glow)"
-                                            style={{ cursor: 'pointer' }}
-                                        />
-                                        {/* Center dot */}
-                                        <circle
-                                            r={2}
-                                            fill="#fff"
-                                            fillOpacity={0.9}
-                                        />
+                                        <g style={{ cursor: 'pointer' }}>
+                                            {/* Pulse ring */}
+                                            <circle
+                                                r={getMarkerSize(marker.attacks) + 6}
+                                                fill="none"
+                                                stroke={WARNA.red}
+                                                strokeWidth={1}
+                                                opacity={0.0}
+                                            >
+                                                <animate attributeName="r" from={getMarkerSize(marker.attacks)} to={getMarkerSize(marker.attacks) + 15} dur="1.5s" repeatCount="indefinite" />
+                                                <animate attributeName="opacity" from="0.6" to="0" dur="1.5s" repeatCount="indefinite" />
+                                            </circle>
+
+                                            {/* Main marker */}
+                                            <circle
+                                                r={getMarkerSize(marker.attacks)}
+                                                fill={WARNA.red}
+                                                fillOpacity={0.8}
+                                                stroke="#fff"
+                                                strokeWidth={1.5}
+                                                filter="url(#glow)"
+                                            />
+                                        </g>
                                     </Marker>
                                 ))}
                             </ZoomableGroup>

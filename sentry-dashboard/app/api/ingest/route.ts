@@ -25,7 +25,7 @@ async function ensureDataDir() {
 
 async function appendEvent(payload: StoredPayload) {
   await ensureDataDir();
-  
+
   let events: StoredPayload[] = [];
   try {
     const { readFile } = await import('fs/promises');
@@ -34,14 +34,60 @@ async function appendEvent(payload: StoredPayload) {
   } catch {
     events = [];
   }
-  
-  events.push(payload);
-  
-  // Keep only last 1000 events (simple retention policy)
-  if (events.length > 1000) {
-    events = events.slice(-1000);
+
+  // Check for Brute Force (5 failed attempts from same IP in last minute)
+  if (payload.type === 'ssh_event' && (payload.data as any).event_type === 'failed') {
+    const ip = (payload.data as any).ip;
+    const oneMinuteAgo = new Date(Date.now() - 60000);
+
+    // Find failed events from same IP in last minute
+    const recentFailures = events.filter(e =>
+      e.type === 'ssh_event' &&
+      (e.data as any).event_type === 'failed' &&
+      (e.data as any).ip === ip &&
+      new Date(e.timestamp) > oneMinuteAgo
+    );
+
+    // If this is the 5th attempt (4 previous + current one), trigger alert
+    if (recentFailures.length === 4) {
+      // Import notification logic dynamically to avoid circular deps if any
+      const { readFile: readNotif, writeFile: writeNotif } = await import('fs/promises');
+      const NOTIF_FILE = path.join(DATA_DIR, 'notifications.json');
+
+      let notifications = [];
+      try {
+        if (existsSync(NOTIF_FILE)) {
+          notifications = JSON.parse(await readNotif(NOTIF_FILE, 'utf-8'));
+        }
+      } catch { }
+
+      const newAlert = {
+        id: crypto.randomUUID(),
+        type: 'alert',
+        title: 'Brute Force Detected',
+        message: `High number of failed SSH login attempts detected from ${ip} on ${payload.nodeName}`,
+        timestamp: new Date().toISOString(),
+        read: false,
+        source: 'Security Monitor'
+      };
+
+      notifications.unshift(newAlert);
+      await writeNotif(NOTIF_FILE, JSON.stringify(notifications, null, 2));
+      console.log(`🚨 ALERT CREATED: Brute force from ${ip}`);
+    }
   }
-  
+
+  events.push(payload);
+
+  // Keep only events from last 7 days (time-based retention)
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  events = events.filter(e => {
+    const eventTime = new Date(e.receivedAt || e.timestamp);
+    return eventTime >= sevenDaysAgo;
+  });
+
   await writeFile(EVENTS_FILE, JSON.stringify(events, null, 2));
 }
 
@@ -49,7 +95,7 @@ export async function POST(request: NextRequest) {
   try {
     // Validate API Key
     const apiKey = request.headers.get('X-API-Key');
-    
+
     // For MVP, accept any non-empty API key or allow empty for testing
     // In production, validate against database
     if (!apiKey) {
@@ -57,7 +103,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    
+
     // Validate payload structure
     if (!body.node_name || !body.type || !body.data) {
       return NextResponse.json(
@@ -86,9 +132,9 @@ export async function POST(request: NextRequest) {
       console.log(`📊 [${body.node_name}] System stats received`);
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      id: storedPayload.id 
+    return NextResponse.json({
+      success: true,
+      id: storedPayload.id
     }, { status: 201 });
 
   } catch (error) {
@@ -101,8 +147,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
-  return NextResponse.json({ 
+  return NextResponse.json({
     message: 'Sentry Dashboard Ingest API',
-    usage: 'POST /api/ingest with payload { node_name, type, data }' 
+    usage: 'POST /api/ingest with payload { node_name, type, data }'
   });
 }

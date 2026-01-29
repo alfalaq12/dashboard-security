@@ -34,10 +34,12 @@ const WARNA = {
     red: '#ff5a5a',
     orange: '#ffaa33',
     purple: '#9b59b6',
-    gray: '#606078'
+    gray: '#606078',
+    cyan: '#00d2d3',
+    pink: '#ff9ff3'
 };
 
-const PIE_COLORS = [WARNA.red, WARNA.green, WARNA.blue, WARNA.orange, WARNA.purple];
+const PIE_COLORS = [WARNA.blue, WARNA.green, WARNA.orange, WARNA.red, WARNA.purple, WARNA.cyan, WARNA.pink];
 
 const PERIOD_OPTIONS = [
     { label: '7 Hari', value: 7 },
@@ -50,8 +52,10 @@ function getTypeLabel(type: string) {
     switch (type) {
         case 'ssh_event': return 'SSH Events';
         case 'heartbeat': return 'Heartbeat';
+        case 'service_status': return 'Service Status';
+        case 'system_stats': return 'System Stats';
         case 'metrics': return 'Metrics';
-        default: return type;
+        default: return type.replace(/_/g, ' ');
     }
 }
 
@@ -59,6 +63,7 @@ export default function HalamanReports() {
     const [data, setData] = useState<ReportData | null>(null);
     const [loading, setLoading] = useState(true);
     const [period, setPeriod] = useState(7);
+    const [activeIndex, setActiveIndex] = useState(-1);
 
     useEffect(() => {
         async function fetchReport() {
@@ -114,8 +119,10 @@ export default function HalamanReports() {
         name: formatDate(t.date)
     })) || [];
 
+    const totalDistribution = data?.eventTypeDistribution?.reduce((acc, curr) => acc + curr.count, 0) || 0;
+
     return (
-        <>
+        <div className="premium-dashboard">
             <div className="page-header">
                 <h2>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 10 }}>
@@ -218,7 +225,7 @@ export default function HalamanReports() {
                         </h3>
                     </div>
                     <div className="card-body">
-                        <ResponsiveContainer width="100%" height={250}>
+                        <ResponsiveContainer width="100%" height={280}>
                             <AreaChart data={trendsFormatted}>
                                 <defs>
                                     <linearGradient id="gradFailed" x1="0" y1="0" x2="0" y2="1">
@@ -231,17 +238,20 @@ export default function HalamanReports() {
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                <XAxis dataKey="name" stroke={WARNA.gray} fontSize={11} />
-                                <YAxis stroke={WARNA.gray} fontSize={11} />
+                                <XAxis dataKey="name" stroke={WARNA.gray} fontSize={11} tickLine={false} axisLine={false} dy={10} />
+                                <YAxis stroke={WARNA.gray} fontSize={11} tickLine={false} axisLine={false} dx={-10} />
                                 <Tooltip
                                     contentStyle={{
-                                        background: '#1a1a24',
-                                        border: '1px solid rgba(50,50,80,0.5)',
-                                        borderRadius: 8
+                                        background: 'rgba(20, 20, 30, 0.9)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: 8,
+                                        backdropFilter: 'blur(10px)',
+                                        boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
                                     }}
+                                    itemStyle={{ padding: 0 }}
                                 />
-                                <Area type="monotone" dataKey="failed" stroke={WARNA.red} fillOpacity={1} fill="url(#gradFailed)" name="Gagal" />
-                                <Area type="monotone" dataKey="success" stroke={WARNA.green} fillOpacity={1} fill="url(#gradSuccess)" name="Sukses" />
+                                <Area type="monotone" dataKey="failed" stroke={WARNA.red} strokeWidth={2} fillOpacity={1} fill="url(#gradFailed)" name="Gagal" />
+                                <Area type="monotone" dataKey="success" stroke={WARNA.green} strokeWidth={2} fillOpacity={1} fill="url(#gradSuccess)" name="Sukses" />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
@@ -258,38 +268,86 @@ export default function HalamanReports() {
                             Distribusi Event
                         </h3>
                     </div>
-                    <div className="card-body">
-                        <ResponsiveContainer width="100%" height={200}>
+                    <div className="card-body pie-container">
+                        <ResponsiveContainer width="100%" height={220}>
                             <PieChart>
+                                <defs>
+                                    {data?.eventTypeDistribution?.map((entry, index) => (
+                                        <linearGradient key={`gradPieReport-${index}`} id={`gradPieReport-${index}`} x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor={PIE_COLORS[index % PIE_COLORS.length]} stopOpacity={1} />
+                                            <stop offset="100%" stopColor={PIE_COLORS[index % PIE_COLORS.length]} stopOpacity={0.6} />
+                                        </linearGradient>
+                                    ))}
+                                    <filter id="glowPieReport" height="130%">
+                                        <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blurred" />
+                                        <feFlood floodColor="white" floodOpacity="0.1" result="glowColor" />
+                                        <feComposite in="glowColor" in2="blurred" operator="in" result="softGlow" />
+                                        <feMerge>
+                                            <feMergeNode in="softGlow" />
+                                            <feMergeNode in="SourceGraphic" />
+                                        </feMerge>
+                                    </filter>
+                                </defs>
                                 <Pie
                                     data={data?.eventTypeDistribution || []}
                                     cx="50%"
                                     cy="50%"
-                                    innerRadius={50}
-                                    outerRadius={70}
+                                    innerRadius={60}
+                                    outerRadius={80}
                                     paddingAngle={4}
                                     dataKey="count"
                                     nameKey="type"
+                                    stroke="none"
+                                    onMouseEnter={(_, index) => setActiveIndex(index)}
+                                    onMouseLeave={() => setActiveIndex(-1)}
                                 >
-                                    {(data?.eventTypeDistribution || []).map((_, index) => (
-                                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                                    {(data?.eventTypeDistribution || []).map((entry, index) => (
+                                        <Cell
+                                            key={`cell-${index}`}
+                                            fill={`url(#gradPieReport-${index})`}
+                                            style={{
+                                                filter: activeIndex === index ? 'url(#glowPieReport)' : 'none',
+                                                transition: 'all 0.3s ease',
+                                                opacity: activeIndex === -1 || activeIndex === index ? 1 : 0.4
+                                            }}
+                                        />
                                     ))}
                                 </Pie>
                                 <Tooltip
                                     contentStyle={{
-                                        background: '#1a1a24',
-                                        border: '1px solid rgba(50,50,80,0.5)',
-                                        borderRadius: 8
+                                        background: 'rgba(20, 20, 30, 0.9)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: 8,
+                                        backdropFilter: 'blur(10px)'
                                     }}
+                                    itemStyle={{ color: '#fff' }}
                                     formatter={(value, name) => [value, getTypeLabel(String(name))]}
                                 />
+                                {/* Center Label */}
+                                <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" fill="#fff" style={{ fontSize: '24px', fontWeight: 'bold', filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.2))' }}>
+                                    {totalDistribution}
+                                </text>
+                                <text x="50%" y="58%" textAnchor="middle" dominantBaseline="middle" fill="var(--text-gray)" style={{ fontSize: '12px' }}>
+                                    Events
+                                </text>
                             </PieChart>
                         </ResponsiveContainer>
-                        <div className="pie-legend">
+
+                        <div className="pie-stats-column">
                             {data?.eventTypeDistribution?.map((item, idx) => (
-                                <div key={item.type} className="legend-item">
-                                    <span className="dot" style={{ background: PIE_COLORS[idx % PIE_COLORS.length] }}></span>
-                                    {getTypeLabel(item.type)} ({item.count})
+                                <div key={item.type} className="stat-row">
+                                    <div className="stat-indicator" style={{ background: PIE_COLORS[idx % PIE_COLORS.length] }}></div>
+                                    <div className="stat-name">{getTypeLabel(item.type)}</div>
+                                    <div className="stat-bar-container">
+                                        <div
+                                            className="stat-bar-fill"
+                                            style={{
+                                                width: `${(item.count / totalDistribution) * 100}%`,
+                                                background: PIE_COLORS[idx % PIE_COLORS.length]
+                                            }}
+                                        ></div>
+                                    </div>
+                                    <div className="stat-value">{item.count}</div>
                                 </div>
                             ))}
                         </div>
@@ -310,18 +368,22 @@ export default function HalamanReports() {
                 <div className="card-body">
                     {data?.topAttackers && data.topAttackers.length > 0 ? (
                         <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={data.topAttackers} layout="vertical">
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                <XAxis type="number" stroke={WARNA.gray} fontSize={11} />
-                                <YAxis type="category" dataKey="ip" stroke={WARNA.gray} fontSize={11} width={120} />
+                            <BarChart data={data.topAttackers} layout="vertical" margin={{ left: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
+                                <XAxis type="number" stroke={WARNA.gray} fontSize={11} axisLine={false} tickLine={false} />
+                                <YAxis type="category" dataKey="ip" stroke={WARNA.gray} fontSize={11} width={100} axisLine={false} tickLine={false} />
                                 <Tooltip
+                                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                                     contentStyle={{
-                                        background: '#1a1a24',
-                                        border: '1px solid rgba(50,50,80,0.5)',
-                                        borderRadius: 8
+                                        background: 'rgba(20, 20, 30, 0.9)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: 8,
+                                        backdropFilter: 'blur(10px)'
                                     }}
                                 />
-                                <Bar dataKey="count" fill={WARNA.red} radius={[0, 4, 4, 0]} name="Percobaan Gagal" />
+                                <Bar dataKey="count" fill={WARNA.red} radius={[0, 4, 4, 0]} barSize={20}>
+                                    <Cell fill="url(#gradFailed)" />
+                                </Bar>
                             </BarChart>
                         </ResponsiveContainer>
                     ) : (
@@ -344,17 +406,17 @@ export default function HalamanReports() {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    margin-bottom: 20px;
+                    margin-bottom: 24px;
                     flex-wrap: wrap;
                     gap: 12px;
                 }
 
                 .period-selector {
                     display: flex;
-                    gap: 8px;
+                    gap: 6px;
                     background: var(--bg-card);
                     border: 1px solid var(--border-main);
-                    border-radius: 10px;
+                    border-radius: 12px;
                     padding: 4px;
                 }
 
@@ -362,20 +424,23 @@ export default function HalamanReports() {
                     background: transparent;
                     border: none;
                     padding: 8px 16px;
-                    border-radius: 6px;
+                    border-radius: 8px;
                     color: var(--text-gray);
                     cursor: pointer;
-                    font-size: 0.9rem;
+                    font-size: 0.85rem;
+                    font-weight: 500;
                     transition: all 0.2s;
                 }
 
                 .period-btn.active {
-                    background: var(--primary);
-                    color: white;
+                    background: linear-gradient(135deg, rgba(124, 92, 255, 0.2) 0%, rgba(77, 159, 255, 0.2) 100%);
+                    color: var(--primary);
+                    border: 1px solid rgba(124, 92, 255, 0.3);
                 }
 
                 .period-btn:hover:not(.active) {
                     background: var(--bg-hover);
+                    color: var(--text-main);
                 }
 
                 .btn-export {
@@ -384,60 +449,176 @@ export default function HalamanReports() {
                     gap: 8px;
                     background: var(--bg-card);
                     border: 1px solid var(--border-main);
-                    border-radius: 8px;
-                    padding: 10px 16px;
+                    border-radius: 12px;
+                    padding: 10px 20px;
                     color: var(--text-main);
                     cursor: pointer;
                     font-size: 0.9rem;
                     transition: all 0.2s;
+                    font-weight: 500;
                 }
 
                 .btn-export:hover {
                     background: var(--bg-hover);
                     border-color: var(--primary);
+                    color: var(--primary);
                 }
+
+                .stats-grid {
+                    display: grid;
+                    grid-template-columns: repeat(4, 1fr);
+                    gap: 20px;
+                    margin-bottom: 24px;
+                }
+
+                @media (max-width: 1024px) {
+                    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+                }
+
+                .stat-card {
+                    background: var(--bg-card);
+                    border: 1px solid var(--border-main);
+                    border-radius: 16px;
+                    padding: 24px;
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                }
+
+                .stat-icon {
+                    width: 48px;
+                    height: 48px;
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .stat-info .label {
+                    color: var(--text-gray);
+                    font-size: 0.85rem;
+                    margin-bottom: 4px;
+                }
+
+                .stat-info .value {
+                    font-size: 1.5rem;
+                    font-weight: 700;
+                    color: var(--text-white);
+                }
+                
+                .value.success { color: ${WARNA.green}; }
+                .value.warning { color: ${WARNA.orange}; }
+                .value.danger { color: ${WARNA.red}; }
 
                 .charts-grid {
                     display: grid;
                     grid-template-columns: 2fr 1fr;
                     gap: 20px;
-                    margin-bottom: 20px;
+                    margin-bottom: 24px;
                 }
 
                 @media (max-width: 900px) {
-                    .charts-grid {
-                        grid-template-columns: 1fr;
-                    }
+                    .charts-grid { grid-template-columns: 1fr; }
                 }
 
-                .chart-card, .chart-card-small {
+                .card {
                     background: var(--bg-card);
                     border: 1px solid var(--border-main);
-                    border-radius: 12px;
-                }
-
-                .pie-legend {
+                    border-radius: 16px;
+                    overflow: hidden;
                     display: flex;
-                    flex-wrap: wrap;
-                    gap: 12px;
-                    justify-content: center;
-                    padding: 16px;
+                    flex-direction: column;
                 }
 
-                .legend-item {
+                .card-header {
+                    padding: 20px 24px;
+                    border-bottom: 1px solid var(--border-main);
+                }
+
+                .card-header h3 {
+                    font-size: 1rem;
+                    margin: 0;
                     display: flex;
                     align-items: center;
-                    gap: 6px;
+                    color: var(--text-main);
+                }
+
+                .card-body {
+                    padding: 24px;
+                    flex: 1;
+                }
+
+                .pie-container {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 20px;
+                }
+
+                .pie-stats-column {
+                    width: 100%;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                }
+
+                .stat-row {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
                     font-size: 0.85rem;
                     color: var(--text-gray);
                 }
 
-                .dot {
+                .stat-indicator {
                     width: 10px;
                     height: 10px;
                     border-radius: 50%;
+                    flex-shrink: 0;
+                }
+                
+                .stat-name {
+                    flex-shrink: 0;
+                    min-width: 90px;
+                }
+
+                .stat-bar-container {
+                    flex: 1;
+                    height: 6px;
+                    background: rgba(255,255,255,0.05);
+                    border-radius: 3px;
+                    overflow: hidden;
+                }
+
+                .stat-bar-fill {
+                    height: 100%;
+                    border-radius: 3px;
+                }
+
+                .stat-value {
+                    font-family: monospace;
+                    color: var(--text-white);
+                    font-weight: 600;
+                    margin-left: 4px;
+                }
+
+                .empty-state {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    height: 200px;
+                    color: var(--text-muted);
+                    text-align: center;
+                }
+                
+                .icon-empty {
+                    margin-bottom: 16px;
+                    padding: 16px;
+                    background: rgba(255,255,255,0.03);
+                    border-radius: 50%;
                 }
             `}</style>
-        </>
+        </div>
     );
 }

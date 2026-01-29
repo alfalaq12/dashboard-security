@@ -7,6 +7,8 @@ interface ServiceStatus {
     name: string;
     status: string;
     active: boolean;
+    cpu?: number;
+    memory?: number;
 }
 
 interface ServicePayload {
@@ -62,7 +64,9 @@ export async function GET() {
                 services: services.map((s) => ({
                     name: s.name,
                     status: s.status,
-                    active: s.active
+                    active: s.active,
+                    cpu: s.cpu || 0,
+                    memory: s.memory || 0
                 })),
                 summary: {
                     total: services.length,

@@ -2,6 +2,7 @@ package collector
 
 import (
 	"bytes"
+	"fmt"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -10,9 +11,11 @@ import (
 
 // ServiceStatus represents the status of a system service
 type ServiceStatus struct {
-	Name   string `json:"name"`
-	Status string `json:"status"` // running, stopped, failed, unknown
-	Active bool   `json:"active"`
+	Name     string  `json:"name"`
+	Status   string  `json:"status"` // running, stopped, failed, unknown
+	Active   bool    `json:"active"`
+	CPU      float64 `json:"cpu"`    // CPU usage percentage
+	MemoryMB float64 `json:"memory"` // Memory usage in MB
 }
 
 // ServiceData contains all services status for a node
@@ -104,37 +107,91 @@ func (c *ServiceCollector) collect() ServiceData {
 	// Get all running services first
 	runningServices := c.getRunningServices()
 
+	// Helper to check if service already added
+	added := make(map[string]bool)
+
 	// Check each common service
 	for _, svc := range commonServices {
 		status := c.getServiceStatus(svc)
 		if status != "unknown" {
+			// Get resources only if running
+			var cpu, mem float64
+			if status == "running" {
+				cpu, mem = c.getServiceResources(svc)
+			}
+
 			services = append(services, ServiceStatus{
-				Name:   svc,
-				Status: status,
-				Active: status == "running",
+				Name:     svc,
+				Status:   status,
+				Active:   status == "running",
+				CPU:      cpu,
+				MemoryMB: mem,
 			})
+			added[svc] = true
 		}
 	}
 
 	// Also add any running services not in common list
 	for _, svc := range runningServices {
-		found := false
-		for _, existing := range services {
-			if existing.Name == svc {
-				found = true
-				break
-			}
-		}
-		if !found {
+		if !added[svc] {
+			cpu, mem := c.getServiceResources(svc)
 			services = append(services, ServiceStatus{
-				Name:   svc,
-				Status: "running",
-				Active: true,
+				Name:     svc,
+				Status:   "running",
+				Active:   true,
+				CPU:      cpu,
+				MemoryMB: mem,
 			})
 		}
 	}
 
 	return ServiceData{Services: services}
+}
+
+// getServiceResources attempts to get CPU and Memory usage for a service
+func (c *ServiceCollector) getServiceResources(name string) (float64, float64) {
+	// Try to get MainPID from systemctl
+	cmd := exec.Command("systemctl", "show", "--property=MainPID", name)
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	err := cmd.Run()
+	if err != nil {
+		return 0, 0
+	}
+
+	output := strings.TrimSpace(out.String())
+	// Output format: MainPID=1234
+	parts := strings.Split(output, "=")
+	if len(parts) != 2 || parts[1] == "0" {
+		// Try to fallback to pgrep if PID is 0 (some services forks)
+		// but for now return 0 to be safe
+		return 0, 0
+	}
+	pid := parts[1]
+
+	// Get usage using ps
+	// %cpu, rss (resident set size in KB)
+	psCmd := exec.Command("ps", "-p", pid, "-o", "%cpu,rss", "--no-headers")
+	var psOut bytes.Buffer
+	psCmd.Stdout = &psOut
+	if err := psCmd.Run(); err != nil {
+		return 0, 0
+	}
+
+	psOutput := strings.TrimSpace(psOut.String())
+	// Output: 0.5 12345
+	psParts := strings.Fields(psOutput)
+	if len(psParts) != 2 {
+		return 0, 0
+	}
+
+	var cpu float64
+	var memKB float64
+
+	fmt.Sscanf(psParts[0], "%f", &cpu)
+	fmt.Sscanf(psParts[1], "%f", &memKB)
+
+	return cpu, memKB / 1024.0 // Convert KB to MB
 }
 
 // getServiceStatus checks the status of a single service

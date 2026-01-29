@@ -233,10 +233,6 @@ export default function Dashboard() {
           <p className="header-subtitle">Server Monitoring & Security Platform</p>
         </div>
         <div className="header-right">
-          <div className="live-indicator">
-            <span className="pulse-dot"></span>
-            <span>Live</span>
-          </div>
           <div className="header-time">
             <div className="time-display">{currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
             <div className="date-display">{currentTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</div>
@@ -429,7 +425,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Server Status Pie */}
+        {/* Server Status Pie - Modern */}
         <div className="chart-card-premium">
           <div className="chart-header">
             <div className="chart-title">
@@ -440,50 +436,178 @@ export default function Dashboard() {
               <h3>Server Status</h3>
             </div>
           </div>
-          <div className="chart-body pie-container">
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={dataPie}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={55}
-                  outerRadius={80}
-                  paddingAngle={4}
-                  dataKey="value"
-                >
-                  {dataPie.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    background: 'rgba(15, 15, 25, 0.95)',
-                    border: '1px solid rgba(124, 92, 255, 0.3)',
-                    borderRadius: 12,
-                    padding: '12px 16px'
-                  }}
-                  formatter={(value, name) => [
-                    <span key="value" style={{ color: '#fff', fontWeight: 600 }}>{value} servers</span>,
-                    <span key="name" style={{ color: '#c4c9d4' }}>{name}</span>
-                  ]}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="pie-center-label">
-              <span className="total-value">{totalNodes}</span>
-              <span className="total-label">Total</span>
+          <div className="chart-body pie-container-modern">
+            <div className="pie-wrapper">
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <defs>
+                    <linearGradient id="gradOnline" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#00f5c4" />
+                      <stop offset="100%" stopColor="#00d9a5" />
+                    </linearGradient>
+                    <linearGradient id="gradOffline" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#ff8a8a" />
+                      <stop offset="100%" stopColor="#ff5a5a" />
+                    </linearGradient>
+                    <filter id="glowOnline" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur stdDeviation="4" result="glow" />
+                      <feMerge>
+                        <feMergeNode in="glow" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                    <filter id="glowOffline" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur stdDeviation="4" result="glow" />
+                      <feMerge>
+                        <feMergeNode in="glow" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                  </defs>
+                  <Pie
+                    data={dataPie}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={6}
+                    dataKey="value"
+                    animationBegin={0}
+                    animationDuration={800}
+                    animationEasing="ease-out"
+                    cornerRadius={8}
+                    stroke="none"
+                  >
+                    {dataPie.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={entry.name === 'Online' ? 'url(#gradOnline)' : 'url(#gradOffline)'}
+                        filter={entry.name === 'Online' ? 'url(#glowOnline)' : 'url(#glowOffline)'}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      background: 'rgba(15, 15, 25, 0.95)',
+                      border: '1px solid rgba(124, 92, 255, 0.3)',
+                      borderRadius: 12,
+                      padding: '12px 16px',
+                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)'
+                    }}
+                    formatter={(value, name) => [
+                      <span key="value" style={{ color: '#fff', fontWeight: 600 }}>{value} servers</span>,
+                      <span key="name" style={{ color: '#c4c9d4' }}>{name}</span>
+                    ]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="pie-center-label">
+                <span className="total-value">{totalNodes}</span>
+                <span className="total-label">Total</span>
+              </div>
             </div>
-          </div>
-          <div className="chart-legend centered">
-            <div className="legend-item">
-              <span className="legend-dot" style={{ background: WARNA.green }}></span>
-              <span>Online ({dataNodes?.onlineNodes || 0})</span>
+
+            <div className="pie-stats-modern">
+              {dataPie.map((item) => (
+                <div key={item.name} className="stat-row">
+                  <div className={`stat-indicator ${item.name.toLowerCase()}`}></div>
+                  <div className="stat-name">{item.name}</div>
+                  <div className="stat-bar-container">
+                    <div
+                      className="stat-bar-fill"
+                      style={{
+                        width: `${totalNodes > 0 ? (item.value / totalNodes) * 100 : 0}%`,
+                        background: item.name === 'Online' ? WARNA.green : WARNA.red
+                      }}
+                    ></div>
+                  </div>
+                  <div className="stat-value">{item.value}</div>
+                </div>
+              ))}
             </div>
-            <div className="legend-item">
-              <span className="legend-dot" style={{ background: WARNA.red }}></span>
-              <span>Offline ({dataNodes?.offlineNodes || 0})</span>
-            </div>
+
+            <style jsx>{`
+              .pie-container-modern {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 16px;
+                padding: 10px;
+              }
+              .pie-wrapper {
+                position: relative;
+                width: 100%;
+                height: 200px;
+              }
+              .pie-center-label {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                text-align: center;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                pointer-events: none;
+              }
+              .total-value {
+                font-size: 24px;
+                font-weight: 700;
+                color: #fff;
+                line-height: 1;
+                filter: drop-shadow(0 0 4px rgba(255,255,255,0.2));
+              }
+              .total-label {
+                font-size: 12px;
+                color: #9090a8;
+                margin-top: 4px;
+              }
+              .pie-stats-modern {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                padding: 0 10px;
+              }
+              .stat-row {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-size: 0.85rem;
+                color: #9090a8;
+              }
+              .stat-indicator {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                flex-shrink: 0;
+              }
+              .stat-indicator.online { background: #00d9a5; box-shadow: 0 0 8px #00d9a5; }
+              .stat-indicator.offline { background: #ff6b6b; box-shadow: 0 0 8px #ff6b6b; }
+              
+              .stat-name {
+                flex-shrink: 0;
+                min-width: 50px;
+              }
+              .stat-bar-container {
+                flex: 1;
+                height: 6px;
+                background: rgba(255,255,255,0.05);
+                border-radius: 3px;
+                overflow: hidden;
+              }
+              .stat-bar-fill {
+                height: 100%;
+                border-radius: 3px;
+                transition: width 1s ease-out;
+              }
+              .stat-value {
+                font-family: monospace;
+                color: #fff;
+                font-weight: 600;
+                margin-left: 4px;
+              }
+            `}</style>
           </div>
         </div>
       </div>

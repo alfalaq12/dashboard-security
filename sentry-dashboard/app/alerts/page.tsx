@@ -2,71 +2,165 @@
 
 import { useState, useEffect } from 'react';
 
-const FITUR_NOTIF = [
-  {
-    nama: 'Email',
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-        <polyline points="22,6 12,13 2,6" />
-      </svg>
-    ),
-    warna: '#4d9fff',
-    deskripsi: 'Notifikasi langsung ke inbox'
-  },
-  {
-    nama: 'Telegram',
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M21 5L2 12.5l7 1M21 5l-2.5 15L9 13.5M21 5L9 13.5m0 0V21l3.5-4.5" />
-      </svg>
-    ),
-    warna: '#29b6f6',
-    deskripsi: 'Alert instan via bot Telegram'
-  },
-  {
-    nama: 'Discord',
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M9 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" fill="currentColor" />
-        <path d="M18.93 5.34A16.33 16.33 0 0 0 14.86 4c-.18.33-.39.76-.53 1.1a15.27 15.27 0 0 0-4.66 0A11.43 11.43 0 0 0 9.14 4a16.42 16.42 0 0 0-4.07 1.34A17.33 17.33 0 0 0 2.1 17.54a16.5 16.5 0 0 0 5.06 2.59 12.3 12.3 0 0 0 1.06-1.76c-.58-.22-1.14-.49-1.66-.81.14-.1.28-.21.41-.31a11.71 11.71 0 0 0 10.06 0c.13.11.27.21.41.31-.53.33-1.08.6-1.66.81.31.63.68 1.22 1.06 1.76a16.46 16.46 0 0 0 5.06-2.59 17.32 17.32 0 0 0-2.97-12.2z" />
-      </svg>
-    ),
-    warna: '#7289da',
-    deskripsi: 'Webhook ke channel server'
-  },
-  {
-    nama: 'Slack',
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M14.5 10c-.83 0-1.5-.67-1.5-1.5v-5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5z" />
-        <path d="M20.5 10H19v-1.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
-        <path d="M9.5 14c.83 0 1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5S8 21.33 8 20.5v-5c0-.83.67-1.5 1.5-1.5z" />
-        <path d="M3.5 14H5v1.5c0 .83-.67 1.5-1.5 1.5S2 16.33 2 15.5 2.67 14 3.5 14z" />
-        <path d="M14 14.5c0-.83.67-1.5 1.5-1.5h5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-5c-.83 0-1.5-.67-1.5-1.5z" />
-        <path d="M15.5 19H14v1.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5-.67-1.5-1.5-1.5z" />
-        <path d="M10 9.5C10 8.67 9.33 8 8.5 8h-5C2.67 8 2 8.67 2 9.5S2.67 11 3.5 11h5c.83 0 1.5-.67 1.5-1.5z" />
-        <path d="M8.5 5H10V3.5C10 2.67 9.33 2 8.5 2S7 2.67 7 3.5 7.67 5 8.5 5z" />
-      </svg>
-    ),
-    warna: '#e01e5a',
-    deskripsi: 'Integrasi workspace Slack'
-  }
-];
+interface Notification {
+  id: string;
+  type: 'alert' | 'warning' | 'info' | 'success';
+  title: string;
+  message: string;
+  timestamp: string;
+  read: boolean;
+  source?: string;
+}
 
-export default function HalamanAlerts() {
-  const [progress, setProgress] = useState(0);
+export default function AlertsPage() {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'unread' | 'critical'>('all');
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setProgress((prev) => (prev >= 75 ? 75 : prev + 1));
-    }, 50);
-    return () => clearInterval(timer);
+    fetchNotifications();
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
   }, []);
+
+  async function fetchNotifications() {
+    try {
+      const res = await fetch('/api/notifications');
+      const data = await res.json();
+      if (data.notifications) {
+        setNotifications(data.notifications);
+      } else if (Array.isArray(data)) {
+        setNotifications(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function markAsRead(id: string) {
+    try {
+      await fetch('/api/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action: 'markRead' })
+      });
+      // Optimistic update
+      setNotifications(prev => prev.map(n =>
+        n.id === id ? { ...n, read: true } : n
+      ));
+    } catch (error) {
+      console.error('Failed to mark as read:', error);
+    }
+  }
+
+  async function deleteNotification(id: string) {
+    try {
+      await fetch('/api/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action: 'delete' })
+      });
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    } catch (error) {
+      console.error('Failed to delete:', error);
+    }
+  }
+
+  const filteredNotifications = notifications.filter(n => {
+    if (filter === 'unread') return !n.read;
+    if (filter === 'critical') return n.type === 'alert' || n.type === 'warning';
+    return true;
+  });
+
+  const getIcon = (type: string) => {
+    switch (type) {
+      case 'alert':
+      case 'critical':
+        return (
+          <div className="icon-wrapper red">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          </div>
+        );
+      case 'warning':
+        return (
+          <div className="icon-wrapper orange">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+        );
+      case 'success':
+        return (
+          <div className="icon-wrapper green">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+          </div>
+        );
+      default:
+        return (
+          <div className="icon-wrapper blue">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+          </div>
+        );
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="premium-dashboard">
+        <div className="loading-state">
+          <div className="spinner"></div>
+          <p>Loading Notifications...</p>
+        </div>
+        <style jsx>{`
+          .premium-dashboard {
+            padding: 24px;
+            min-height: 100vh;
+            background: #0d0d12;
+            color: #f5f5f8;
+          }
+          .loading-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 60vh;
+            color: #9090a8;
+          }
+          .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #7c5cff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+          }
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   return (
     <div className="premium-dashboard">
-      {/* Page Header */}
       <div className="dashboard-header">
         <div className="header-left">
           <h1>
@@ -78,334 +172,279 @@ export default function HalamanAlerts() {
           </h1>
           <p className="header-subtitle">Real-time notification system for server monitoring</p>
         </div>
+        <div className="header-right">
+          <div className="filter-tabs">
+            <button className={`tab-btn ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>All</button>
+            <button className={`tab-btn ${filter === 'unread' ? 'active' : ''}`} onClick={() => setFilter('unread')}>Unread</button>
+            <button className={`tab-btn ${filter === 'critical' ? 'active' : ''}`} onClick={() => setFilter('critical')}>Critical</button>
+          </div>
+        </div>
       </div>
 
       <div className="alerts-container">
-        {/* Hero Section */}
-        <div className="hero-card">
-          <div className="hero-glow"></div>
-          <div className="hero-content">
-            <div className="badge-coming-soon">
-              <span className="pulse"></span>
-              Dalam Pengembangan
-            </div>
-            <h1>Segera Hadir</h1>
-            <p>Dapatkan notifikasi instan ketika terjadi serangan atau anomali pada server Anda melalui berbagai platform.</p>
-
-            <div className="progress-section">
-              <div className="progress-header">
-                <span>Progress Pengembangan</span>
-                <span className="progress-percent">{progress}%</span>
+        {filteredNotifications.length > 0 ? (
+          filteredNotifications.map((notif) => (
+            <div key={notif.id} className={`alert-card premium-card ${notif.type} ${notif.read ? 'read' : 'unread'}`}>
+              <div className="alert-content-wrapper">
+                {getIcon(notif.type)}
+                <div className="alert-details">
+                  <div className="alert-header-row">
+                    <h3 className="alert-title">{notif.title}</h3>
+                    <span className="alert-time">
+                      {new Date(notif.timestamp).toLocaleString('id-ID')}
+                    </span>
+                  </div>
+                  <p className="alert-message">{notif.message}</p>
+                  {notif.source && <span className="alert-source">Source: {notif.source}</span>}
+                </div>
               </div>
-              <div className="progress-track">
-                <div className="progress-fill" style={{ width: `${progress}%` }}></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Feature Cards */}
-        <div className="features-grid">
-          {FITUR_NOTIF.map((fitur, idx) => (
-            <div key={fitur.nama} className="feature-card" style={{ animationDelay: `${idx * 0.1}s` }}>
-              <div className="feature-icon" style={{ background: `${fitur.warna}20`, color: fitur.warna }}>
-                {fitur.icon}
-              </div>
-              <h3>{fitur.nama}</h3>
-              <p>{fitur.deskripsi}</p>
-              <div className="feature-status">
-                <span className="status-dot" style={{ background: fitur.warna }}></span>
-                Planned
+              <div className="alert-actions">
+                {!notif.read && (
+                  <button className="action-btn read-btn" onClick={() => markAsRead(notif.id)} title="Mark as read">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </button>
+                )}
+                <button className="action-btn delete-btn" onClick={() => deleteNotification(notif.id)} title="Delete">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
+                </button>
               </div>
             </div>
-          ))}
-        </div>
-
-        {/* Info Cards */}
-        <div className="info-grid">
-          <div className="info-card">
-            <div className="info-icon blue">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
+          ))
+        ) : (
+          <div className="empty-state">
+            <div className="empty-icon">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.3">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
               </svg>
             </div>
-            <div className="info-content">
-              <h4>Real-time Monitoring</h4>
-              <p>Notifikasi dikirim dalam hitungan detik setelah event terdeteksi</p>
-            </div>
+            <h3>No notifications found</h3>
+            <p>You're all caught up! No {filter !== 'all' ? filter : ''} alerts to display.</p>
           </div>
-          <div className="info-card">
-            <div className="info-icon green">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              </svg>
-            </div>
-            <div className="info-content">
-              <h4>Smart Filtering</h4>
-              <p>Filter cerdas untuk menghindari spam notifikasi yang tidak penting</p>
-            </div>
-          </div>
-          <div className="info-card">
-            <div className="info-icon purple">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </div>
-            <div className="info-content">
-              <h4>Auto Escalation</h4>
-              <p>Eskalasi otomatis jika alert tidak ditangani dalam waktu tertentu</p>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
       <style jsx>{`
-                .alerts-container {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 24px;
-                }
+        .premium-dashboard {
+          padding: 24px;
+          min-height: 100vh;
+        }
 
-                .hero-card {
-                    position: relative;
-                    background: var(--bg-card);
-                    border-radius: 20px;
-                    border: 1px solid var(--border-main);
-                    padding: 48px;
-                    overflow: hidden;
-                    text-align: center;
-                }
+        .dashboard-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 32px;
+        }
 
-                .hero-glow {
-                    position: absolute;
-                    top: -50%;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    width: 600px;
-                    height: 400px;
-                    background: radial-gradient(ellipse, rgba(255, 159, 67, 0.15) 0%, transparent 70%);
-                    pointer-events: none;
-                }
+        .header-left h1 {
+          font-size: 1.8rem;
+          font-weight: 700;
+          margin-bottom: 8px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
 
-                .hero-content {
-                    position: relative;
-                    z-index: 1;
-                }
+        .header-subtitle {
+          color: var(--text-gray);
+          font-size: 0.95rem;
+        }
 
-                .badge-coming-soon {
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 8px;
-                    background: linear-gradient(135deg, rgba(255, 159, 67, 0.2), rgba(255, 107, 107, 0.2));
-                    border: 1px solid rgba(255, 159, 67, 0.3);
-                    padding: 8px 16px;
-                    border-radius: 20px;
-                    font-size: 0.85rem;
-                    color: #ff9f43;
-                    margin-bottom: 24px;
-                }
+        .alerts-container {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          max-width: 900px;
+          margin: 0 auto;
+        }
 
-                .pulse {
-                    width: 8px;
-                    height: 8px;
-                    background: #ff9f43;
-                    border-radius: 50%;
-                    animation: pulse 2s infinite;
-                }
+        .alert-card {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 20px;
+          background: rgba(22, 22, 32, 0.6);
+          border: 1px solid var(--border-main);
+          border-radius: 16px;
+          transition: all 0.3s ease;
+        }
 
-                @keyframes pulse {
-                    0%, 100% { opacity: 1; transform: scale(1); }
-                    50% { opacity: 0.5; transform: scale(1.2); }
-                }
+        .alert-card:hover {
+          background: rgba(30, 30, 45, 0.8);
+          transform: translateY(-2px);
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+        }
 
-                .hero-content h1 {
-                    font-size: 2.5rem;
-                    margin-bottom: 16px;
-                    background: linear-gradient(135deg, #ff9f43, #ff6b6b);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                    background-clip: text;
-                }
+        .alert-card.unread {
+          border-left: 4px solid var(--accent-primary);
+          background: rgba(26, 26, 40, 0.8);
+        }
 
-                .hero-content > p {
-                    color: var(--text-gray);
-                    max-width: 500px;
-                    margin: 0 auto 32px;
-                    line-height: 1.7;
-                }
+        .alert-card.alert.unread { border-left-color: var(--accent-red); }
+        .alert-card.warning.unread { border-left-color: var(--accent-orange); }
+        .alert-card.success.unread { border-left-color: var(--accent-green); }
 
-                .progress-section {
-                    max-width: 400px;
-                    margin: 0 auto;
-                }
+        .alert-content-wrapper {
+          display: flex;
+          gap: 16px;
+          flex: 1;
+        }
 
-                .progress-header {
-                    display: flex;
-                    justify-content: space-between;
-                    margin-bottom: 8px;
-                    font-size: 0.9rem;
-                    color: var(--text-gray);
-                }
+        .icon-wrapper {
+          min-width: 48px;
+          width: 48px;
+          height: 48px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(255, 255, 255, 0.05);
+        }
 
-                .progress-percent {
-                    color: #ff9f43;
-                    font-weight: 600;
-                }
+        .icon-wrapper.red { color: var(--accent-red); background: rgba(255, 90, 90, 0.15); }
+        .icon-wrapper.orange { color: var(--accent-orange); background: rgba(255, 170, 51, 0.15); }
+        .icon-wrapper.green { color: var(--accent-green); background: rgba(61, 214, 140, 0.15); }
+        .icon-wrapper.blue { color: var(--accent-primary); background: rgba(124, 92, 255, 0.15); }
 
-                .progress-track {
-                    height: 8px;
-                    background: var(--bg-hover);
-                    border-radius: 4px;
-                    overflow: hidden;
-                }
+        .alert-details {
+          flex: 1;
+        }
 
-                .progress-fill {
-                    height: 100%;
-                    background: linear-gradient(90deg, #ff9f43, #ff6b6b);
-                    border-radius: 4px;
-                    transition: width 0.3s ease;
-                }
+        .alert-header-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 6px;
+        }
 
-                .features-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                    gap: 16px;
-                }
+        .alert-title {
+          font-size: 1rem;
+          font-weight: 600;
+          color: var(--text-white);
+          margin: 0;
+        }
 
-                .feature-card {
-                    background: var(--bg-card);
-                    border: 1px solid var(--border-main);
-                    border-radius: 16px;
-                    padding: 24px;
-                    text-align: center;
-                    transition: all 0.3s ease;
-                    animation: fadeInUp 0.5s ease forwards;
-                    opacity: 0;
-                }
+        .alert-time {
+          font-size: 0.75rem;
+          color: var(--text-muted);
+          white-space: nowrap;
+          margin-left: 12px;
+        }
 
-                @keyframes fadeInUp {
-                    from {
-                        opacity: 0;
-                        transform: translateY(20px);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translateY(0);
-                    }
-                }
+        .alert-message {
+          color: var(--text-gray);
+          font-size: 0.9rem;
+          margin: 0 0 8px 0;
+          line-height: 1.5;
+        }
 
-                .feature-card:hover {
-                    transform: translateY(-4px);
-                    border-color: rgba(255, 255, 255, 0.1);
-                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-                }
+        .alert-source {
+          display: inline-block;
+          font-size: 0.75rem;
+          color: var(--text-muted);
+          background: rgba(255, 255, 255, 0.05);
+          padding: 2px 8px;
+          border-radius: 4px;
+        }
 
-                .feature-icon {
-                    width: 56px;
-                    height: 56px;
-                    border-radius: 14px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    margin: 0 auto 16px;
-                }
+        .alert-actions {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          margin-left: 16px;
+        }
 
-                .feature-card h3 {
-                    font-size: 1.1rem;
-                    margin-bottom: 8px;
-                    color: var(--text-main);
-                }
+        .action-btn {
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          border: none;
+          background: transparent;
+          color: var(--text-gray);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s;
+        }
 
-                .feature-card p {
-                    font-size: 0.85rem;
-                    color: var(--text-gray);
-                    margin-bottom: 16px;
-                    line-height: 1.5;
-                }
+        .action-btn:hover {
+          background: rgba(255, 255, 255, 0.1);
+          color: var(--text-white);
+        }
 
-                .feature-status {
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 6px;
-                    font-size: 0.75rem;
-                    color: var(--text-muted);
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                }
+        .read-btn:hover { color: var(--accent-primary); background: rgba(124, 92, 255, 0.1); }
+        .delete-btn:hover { color: var(--accent-red); background: rgba(255, 90, 90, 0.1); }
 
-                .status-dot {
-                    width: 6px;
-                    height: 6px;
-                    border-radius: 50%;
-                    animation: blink 2s infinite;
-                }
+        .filter-tabs {
+          display: flex;
+          gap: 8px;
+          background: rgba(0, 0, 0, 0.2);
+          padding: 4px;
+          border-radius: 10px;
+          border: 1px solid var(--border-main);
+        }
 
-                @keyframes blink {
-                    0%, 100% { opacity: 1; }
-                    50% { opacity: 0.3; }
-                }
+        .tab-btn {
+          padding: 8px 16px;
+          border: none;
+          background: transparent;
+          color: var(--text-gray);
+          font-size: 0.85rem;
+          cursor: pointer;
+          border-radius: 8px;
+          transition: all 0.2s;
+        }
 
-                .info-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-                    gap: 16px;
-                }
+        .tab-btn.active {
+          background: var(--accent-primary);
+          color: white;
+          font-weight: 500;
+        }
 
-                .info-card {
-                    background: var(--bg-card);
-                    border: 1px solid var(--border-main);
-                    border-radius: 12px;
-                    padding: 20px;
-                    display: flex;
-                    gap: 16px;
-                    align-items: flex-start;
-                    transition: all 0.3s ease;
-                }
+        .tab-btn:hover:not(.active) {
+          color: var(--text-white);
+        }
 
-                .info-card:hover {
-                    border-color: rgba(255, 255, 255, 0.1);
-                }
+        .empty-state {
+          text-align: center;
+          padding: 60px 20px;
+          color: var(--text-gray);
+        }
 
-                .info-icon {
-                    width: 44px;
-                    height: 44px;
-                    border-radius: 10px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    flex-shrink: 0;
-                }
+        .empty-icon {
+          margin-bottom: 20px;
+        }
 
-                .info-icon.blue {
-                    background: rgba(77, 159, 255, 0.15);
-                    color: #4d9fff;
-                }
+        .empty-state h3 {
+          font-size: 1.1rem;
+          color: var(--text-white);
+          margin-bottom: 8px;
+        }
 
-                .info-icon.green {
-                    background: rgba(61, 214, 140, 0.15);
-                    color: #3dd68c;
-                }
-
-                .info-icon.purple {
-                    background: rgba(124, 92, 255, 0.15);
-                    color: #7c5cff;
-                }
-
-                .info-content h4 {
-                    font-size: 1rem;
-                    margin-bottom: 6px;
-                    color: var(--text-main);
-                }
-
-                .info-content p {
-                    font-size: 0.85rem;
-                    color: var(--text-gray);
-                    line-height: 1.5;
-                    margin: 0;
-                }
-            `}</style>
+        @media (max-width: 600px) {
+          .alert-card {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+          
+          .alert-actions {
+            flex-direction: row;
+            width: 100%;
+            justify-content: flex-end;
+            margin-top: 12px;
+            margin-left: 0;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+          }
+        }
+      `}</style>
     </div>
   );
 }
-
