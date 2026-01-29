@@ -42,9 +42,12 @@ ENV HOSTNAME="0.0.0.0"
 
 # Copy necessary files from builder
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/data ./data
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Create data directory with correct permissions
+RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data
+COPY --from=builder --chown=nextjs:nodejs /app/data ./data
 
 # Switch to non-root user
 USER nextjs
