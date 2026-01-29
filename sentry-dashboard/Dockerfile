@@ -6,9 +6,9 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Install dependencies
+# Install dependencies (--legacy-peer-deps for React 19 compatibility)
 COPY package.json package-lock.json* ./
-RUN npm ci --only=production
+RUN npm ci --legacy-peer-deps
 
 # ================================================================
 # Stage 2: Builder
