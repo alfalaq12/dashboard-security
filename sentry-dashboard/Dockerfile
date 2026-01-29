@@ -45,9 +45,10 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Create data directory with correct permissions
-RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data
+# Create data directory with full permissions for write access
+RUN mkdir -p /app/data && chmod 777 /app/data
 COPY --from=builder --chown=nextjs:nodejs /app/data ./data
+RUN chmod -R 777 /app/data
 
 # Switch to non-root user
 USER nextjs
