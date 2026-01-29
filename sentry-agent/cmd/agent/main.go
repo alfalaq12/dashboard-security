@@ -46,7 +46,7 @@ func main() {
 		}()
 	}
 
-	// Initialize System stats collector
+	// Initialize System stats collector (legacy, keeping for backward compatibility)
 	systemCollector := collector.NewSystemCollector(cfg.Interval)
 	systemCollector.Start()
 	log.Printf("✅ System stats collector started (interval: %ds)", cfg.Interval)
@@ -57,6 +57,43 @@ func main() {
 			log.Printf("📊 System Stats: CPU=%d, Mem=%dMB", stats.NumCPU, stats.MemoryAlloc/1024/1024)
 			if err := client.Send("system_stats", stats); err != nil {
 				log.Printf("❌ Failed to send system stats: %v", err)
+			}
+		}
+	}()
+
+	// Initialize Heartbeat collector (new, with real metrics)
+	heartbeatCollector := collector.NewHeartbeatCollector(cfg.Interval)
+	heartbeatCollector.Start()
+	log.Println("✅ Heartbeat collector started")
+
+	// Process heartbeat data
+	go func() {
+		for data := range heartbeatCollector.Data() {
+			log.Printf("💓 Heartbeat: CPU=%.1f%%, Mem=%.1f%%, Disk=%.1f%%",
+				data.CPUPercent, data.MemoryPercent, data.DiskPercent)
+			if err := client.Send("heartbeat", data); err != nil {
+				log.Printf("❌ Failed to send heartbeat: %v", err)
+			}
+		}
+	}()
+
+	// Initialize Service collector (auto-detect services)
+	serviceCollector := collector.NewServiceCollector(cfg.Interval * 3) // Check services less frequently
+	serviceCollector.Start()
+	log.Println("✅ Service collector started (auto-detect mode)")
+
+	// Process service status
+	go func() {
+		for data := range serviceCollector.Data() {
+			runningCount := 0
+			for _, svc := range data.Services {
+				if svc.Active {
+					runningCount++
+				}
+			}
+			log.Printf("🔧 Services: %d running, %d total", runningCount, len(data.Services))
+			if err := client.Send("service_status", data); err != nil {
+				log.Printf("❌ Failed to send service status: %v", err)
 			}
 		}
 	}()

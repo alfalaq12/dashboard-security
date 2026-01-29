@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import SessionManager from './SessionManager';
 
 /*
  * Tipe data user
@@ -83,5 +84,10 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         return null;
     }
 
-    return <>{children}</>;
+    return (
+        <>
+            <SessionManager />
+            {children}
+        </>
+    );
 }

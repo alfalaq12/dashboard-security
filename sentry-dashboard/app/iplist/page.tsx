@@ -488,10 +488,15 @@ export default function HalamanIPList() {
                     padding: 12px 0;
                     color: var(--text-main);
                     font-size: 0.9rem;
+                    outline: none;
                 }
 
                 .search-box input::placeholder {
                     color: var(--text-muted);
+                }
+                
+                .search-box:focus-within {
+                    border-color: #7c5cff;
                 }
 
                 .filter-tabs {

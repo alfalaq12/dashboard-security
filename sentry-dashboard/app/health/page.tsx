@@ -34,6 +34,22 @@ interface HealthData {
     lastUpdated: string;
 }
 
+interface ServiceInfo {
+    name: string;
+    status: string;
+    active: boolean;
+}
+
+interface NodeServices {
+    nodeName: string;
+    services: ServiceInfo[];
+    summary: {
+        total: number;
+        running: number;
+        stopped: number;
+    };
+}
+
 const WARNA = {
     primary: '#7c5cff',
     blue: '#4d9fff',
@@ -138,6 +154,7 @@ export default function HalamanHealth() {
     const [data, setData] = useState<HealthData | null>(null);
     const [loading, setLoading] = useState(true);
     const [selectedServer, setSelectedServer] = useState<ServerHealth | null>(null);
+    const [services, setServices] = useState<NodeServices | null>(null);
 
     useEffect(() => {
         async function fetchHealth() {
@@ -157,6 +174,25 @@ export default function HalamanHealth() {
 
         fetchHealth();
         const timer = setInterval(fetchHealth, 10000);
+        return () => clearInterval(timer);
+    }, [selectedServer]);
+
+    // Fetch services untuk selected server
+    useEffect(() => {
+        async function fetchServices() {
+            if (!selectedServer) return;
+            try {
+                const res = await fetch('/api/services');
+                const json = await res.json();
+                const nodeService = json.nodes?.find((n: NodeServices) => n.nodeName === selectedServer.name);
+                setServices(nodeService || null);
+            } catch (err) {
+                console.error('Gagal fetch services:', err);
+            }
+        }
+
+        fetchServices();
+        const timer = setInterval(fetchServices, 30000);
         return () => clearInterval(timer);
     }, [selectedServer]);
 
@@ -189,71 +225,59 @@ export default function HalamanHealth() {
                 <p>Monitoring kesehatan server secara real-time • <span className="live-badge"><span className="live-dot"></span> Auto-refresh 10s</span></p>
             </div>
 
-            {/* Summary Hero */}
-            <div className="summary-hero">
-                <div className="hero-card total">
-                    <div className="hero-glow"></div>
-                    <div className="hero-content">
-                        <div className="hero-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <rect x="2" y="2" width="20" height="8" rx="2" />
-                                <rect x="2" y="14" width="20" height="8" rx="2" />
-                            </svg>
-                        </div>
-                        <div className="hero-info">
-                            <div className="hero-value">{data?.summary?.total || 0}</div>
-                            <div className="hero-label">Total Server</div>
-                        </div>
+            {/* Summary Stats */}
+            <div className="stats-grid">
+                <div className="stat-card">
+                    <div className="stat-icon" style={{ background: 'rgba(77, 159, 255, 0.15)' }}>
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={WARNA.blue} strokeWidth="2">
+                            <rect x="2" y="2" width="20" height="8" rx="2" />
+                            <rect x="2" y="14" width="20" height="8" rx="2" />
+                        </svg>
+                    </div>
+                    <div className="stat-info">
+                        <div className="label">Total Server</div>
+                        <div className="value info">{data?.summary?.total || 0}</div>
                     </div>
                 </div>
 
-                <div className="hero-card healthy">
-                    <div className="hero-glow"></div>
-                    <div className="hero-content">
-                        <div className="hero-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                <polyline points="22 4 12 14.01 9 11.01" />
-                            </svg>
-                        </div>
-                        <div className="hero-info">
-                            <div className="hero-value">{data?.summary?.healthy || 0}</div>
-                            <div className="hero-label">Sehat</div>
-                        </div>
+                <div className="stat-card">
+                    <div className="stat-icon" style={{ background: 'rgba(61, 214, 140, 0.15)' }}>
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={WARNA.green} strokeWidth="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                            <polyline points="22 4 12 14.01 9 11.01" />
+                        </svg>
+                    </div>
+                    <div className="stat-info">
+                        <div className="label">Sehat</div>
+                        <div className="value success">{data?.summary?.healthy || 0}</div>
                     </div>
                 </div>
 
-                <div className="hero-card warning">
-                    <div className="hero-glow"></div>
-                    <div className="hero-content">
-                        <div className="hero-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                                <line x1="12" y1="9" x2="12" y2="13" />
-                                <line x1="12" y1="17" x2="12.01" y2="17" />
-                            </svg>
-                        </div>
-                        <div className="hero-info">
-                            <div className="hero-value">{data?.summary?.warning || 0}</div>
-                            <div className="hero-label">Peringatan</div>
-                        </div>
+                <div className="stat-card">
+                    <div className="stat-icon" style={{ background: 'rgba(255, 170, 51, 0.15)' }}>
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={WARNA.orange} strokeWidth="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                    </div>
+                    <div className="stat-info">
+                        <div className="label">Peringatan</div>
+                        <div className="value warning">{data?.summary?.warning || 0}</div>
                     </div>
                 </div>
 
-                <div className="hero-card critical">
-                    <div className="hero-glow"></div>
-                    <div className="hero-content">
-                        <div className="hero-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="10" />
-                                <line x1="15" y1="9" x2="9" y2="15" />
-                                <line x1="9" y1="9" x2="15" y2="15" />
-                            </svg>
-                        </div>
-                        <div className="hero-info">
-                            <div className="hero-value">{data?.summary?.critical || 0}</div>
-                            <div className="hero-label">Kritis</div>
-                        </div>
+                <div className="stat-card">
+                    <div className="stat-icon" style={{ background: 'rgba(255, 90, 90, 0.15)' }}>
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={WARNA.red} strokeWidth="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="15" y1="9" x2="9" y2="15" />
+                            <line x1="9" y1="9" x2="15" y2="15" />
+                        </svg>
+                    </div>
+                    <div className="stat-info">
+                        <div className="label">Kritis</div>
+                        <div className="value danger">{data?.summary?.critical || 0}</div>
                     </div>
                 </div>
             </div>
@@ -403,6 +427,37 @@ export default function HalamanHealth() {
                                 </div>
                             </div>
 
+                            {/* Services Status */}
+                            {services && services.services.length > 0 && (
+                                <div className="services-section">
+                                    <div className="services-header">
+                                        <h4>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <circle cx="12" cy="12" r="3" />
+                                                <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
+                                            </svg>
+                                            Services Terdeteksi
+                                        </h4>
+                                        <span className="services-count">
+                                            {services.summary.running} / {services.summary.total} running
+                                        </span>
+                                    </div>
+                                    <div className="services-grid">
+                                        {services.services.slice(0, 12).map((svc) => (
+                                            <div key={svc.name} className={`service-item ${svc.active ? 'running' : 'stopped'}`}>
+                                                <span className="service-dot"></span>
+                                                <span className="service-name">{svc.name}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {services.services.length > 12 && (
+                                        <div className="services-more">
+                                            +{services.services.length - 12} service lainnya
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             {/* Info */}
                             <div className="detail-footer">
                                 <div className="info-item">
@@ -425,7 +480,7 @@ export default function HalamanHealth() {
                         </div>
                     )}
                 </div>
-            </div>
+            </div >
 
             <style jsx>{`
                 .live-badge {
@@ -446,80 +501,6 @@ export default function HalamanHealth() {
                 @keyframes pulse {
                     0%, 100% { opacity: 1; transform: scale(1); }
                     50% { opacity: 0.5; transform: scale(1.2); }
-                }
-
-                .summary-hero {
-                    display: grid;
-                    grid-template-columns: repeat(4, 1fr);
-                    gap: 16px;
-                    margin-bottom: 24px;
-                }
-
-                @media (max-width: 900px) {
-                    .summary-hero { grid-template-columns: repeat(2, 1fr); }
-                }
-
-                .hero-card {
-                    position: relative;
-                    background: var(--bg-card);
-                    border: 1px solid var(--border-main);
-                    border-radius: 16px;
-                    padding: 20px;
-                    overflow: hidden;
-                }
-
-                .hero-glow {
-                    position: absolute;
-                    top: -40%;
-                    right: -40%;
-                    width: 120px;
-                    height: 120px;
-                    border-radius: 50%;
-                    opacity: 0.15;
-                }
-
-                .hero-card.total .hero-glow { background: radial-gradient(circle, ${WARNA.primary} 0%, transparent 70%); }
-                .hero-card.total .hero-icon { color: ${WARNA.primary}; background: rgba(124, 92, 255, 0.15); }
-                .hero-card.total .hero-value { color: ${WARNA.primary}; }
-
-                .hero-card.healthy .hero-glow { background: radial-gradient(circle, ${WARNA.green} 0%, transparent 70%); }
-                .hero-card.healthy .hero-icon { color: ${WARNA.green}; background: rgba(61, 214, 140, 0.15); }
-                .hero-card.healthy .hero-value { color: ${WARNA.green}; }
-
-                .hero-card.warning .hero-glow { background: radial-gradient(circle, ${WARNA.orange} 0%, transparent 70%); }
-                .hero-card.warning .hero-icon { color: ${WARNA.orange}; background: rgba(255, 170, 51, 0.15); }
-                .hero-card.warning .hero-value { color: ${WARNA.orange}; }
-
-                .hero-card.critical .hero-glow { background: radial-gradient(circle, ${WARNA.red} 0%, transparent 70%); }
-                .hero-card.critical .hero-icon { color: ${WARNA.red}; background: rgba(255, 90, 90, 0.15); }
-                .hero-card.critical .hero-value { color: ${WARNA.red}; }
-
-                .hero-content {
-                    position: relative;
-                    display: flex;
-                    align-items: center;
-                    gap: 16px;
-                }
-
-                .hero-icon {
-                    width: 52px;
-                    height: 52px;
-                    border-radius: 12px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-
-                .hero-value {
-                    font-size: 2rem;
-                    font-weight: 700;
-                    line-height: 1;
-                }
-
-                .hero-label {
-                    font-size: 0.9rem;
-                    color: var(--text-gray);
-                    margin-top: 4px;
                 }
 
                 .health-layout {
@@ -738,6 +719,87 @@ export default function HalamanHealth() {
                 .info-value {
                     font-size: 0.9rem;
                     font-weight: 500;
+                }
+
+                .services-section {
+                    margin-top: 20px;
+                    padding-top: 16px;
+                    border-top: 1px solid var(--border-main);
+                }
+
+                .services-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 12px;
+                }
+
+                .services-header h4 {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-size: 0.9rem;
+                    font-weight: 600;
+                    margin: 0;
+                }
+
+                .services-count {
+                    font-size: 0.75rem;
+                    color: ${WARNA.green};
+                    background: rgba(61, 214, 140, 0.15);
+                    padding: 4px 10px;
+                    border-radius: 12px;
+                }
+
+                .services-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                    gap: 8px;
+                }
+
+                .service-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    padding: 8px 10px;
+                    background: var(--bg-hover);
+                    border-radius: 8px;
+                    font-size: 0.8rem;
+                }
+
+                .service-item.running .service-dot {
+                    background: ${WARNA.green};
+                    box-shadow: 0 0 8px ${WARNA.green}60;
+                }
+
+                .service-item.stopped .service-dot {
+                    background: ${WARNA.red};
+                    box-shadow: 0 0 8px ${WARNA.red}60;
+                }
+
+                .service-dot {
+                    width: 8px;
+                    height: 8px;
+                    border-radius: 50%;
+                    flex-shrink: 0;
+                }
+
+                .service-name {
+                    color: var(--text-gray);
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+
+                .service-item.running .service-name {
+                    color: var(--text-white);
+                }
+
+                .services-more {
+                    text-align: center;
+                    padding: 8px;
+                    color: var(--text-muted);
+                    font-size: 0.75rem;
                 }
 
                 .empty-list, .no-selection {
