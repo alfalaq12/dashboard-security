@@ -165,13 +165,69 @@ dashboard-security/
 
 ## 🐳 Docker Deployment
 
+### Quick Start dengan Docker
+
 ```bash
+cd sentry-dashboard
+
 # Build image
 docker build -t sentry-dashboard .
 
 # Run container
-docker run -d -p 3000:3000 sentry-dashboard
+docker run -d -p 3000:3000 --name sentry-app sentry-dashboard
 ```
+
+### Menggunakan Docker Compose (Recommended)
+
+```bash
+cd sentry-dashboard
+
+# Start services
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Stop services
+docker compose down
+```
+
+### Environment Variables
+
+Buat file `.env` di folder `sentry-dashboard/`:
+
+```env
+JWT_SECRET=your-super-secret-jwt-key-change-this
+NODE_ENV=production
+```
+
+### Docker Commands Berguna
+
+```bash
+# Rebuild image (setelah ada perubahan code)
+docker compose up -d --build
+
+# Restart container
+docker compose restart
+
+# Check container status
+docker compose ps
+
+# Masuk ke container shell
+docker exec -it sentry-dashboard sh
+
+# Lihat resource usage
+docker stats sentry-dashboard
+```
+
+### Production Tips
+
+1. **Ganti JWT_SECRET** - Pastikan menggunakan secret yang kuat
+2. **Persist Data** - Volume sudah di-mount untuk folder `/app/data`
+3. **Reverse Proxy** - Gunakan Nginx untuk SSL termination:
+   ```bash
+   docker compose --profile with-nginx up -d
+   ```
 
 ---
 
