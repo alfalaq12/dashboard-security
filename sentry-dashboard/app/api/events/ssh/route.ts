@@ -80,6 +80,7 @@ export async function GET() {
 
         return NextResponse.json({
             totalEvents: sshEvents.length,
+            allEvents: sshEvents, // semua events untuk chart
             recentEvents: sshEvents.slice(-50).reverse(), // Last 50, newest first
             attackers,
             summary: {

@@ -41,10 +41,24 @@ interface ResponseNodes {
 }
 
 /*
+ * event ssh individual
+ */
+interface SSHEvent {
+  id: string;
+  nodeName: string;
+  timestamp: string;
+  event_type: string;
+  user: string;
+  ip: string;
+}
+
+/*
  * response api ssh events
  */
 interface ResponseSSH {
   summary: RingkasanSSH;
+  allEvents: SSHEvent[];
+  recentEvents: SSHEvent[];
   attackers: Array<{
     ip: string;
     failedAttempts: number;
@@ -83,36 +97,65 @@ export default function Dashboard() {
   const [chartData, setChartData] = useState<Array<{ name: string; gagal: number; sukses: number }>>([]);
   const [filterWaktu, setFilterWaktu] = useState(60); // default 1 jam
 
-  // generate chart data berdasarkan filter
+  // generate chart data berdasarkan filter menggunakan data real
   function generateChartData(filter: number, ssh: ResponseSSH | null) {
-    const points = [];
     const now = new Date();
+    const filterMs = filter * 60 * 1000; // filter dalam milliseconds
+    const startTime = now.getTime() - filterMs;
 
     // tentukan interval berdasarkan filter
-    let interval: number;
+    let intervalMinutes: number;
     let count: number;
 
-    if (filter <= 5) {
-      interval = 1; // per menit
+    if (filter <= 1) {
+      intervalMinutes = 0.25; // per 15 detik
+      count = 4;
+    } else if (filter <= 5) {
+      intervalMinutes = 1; // per menit
       count = filter;
     } else if (filter <= 60) {
-      interval = 5; // per 5 menit
+      intervalMinutes = 5; // per 5 menit
       count = Math.floor(filter / 5);
-    } else {
-      interval = 30; // per 30 menit
+    } else if (filter <= 360) {
+      intervalMinutes = 30; // per 30 menit
       count = Math.floor(filter / 30);
+    } else {
+      intervalMinutes = 60; // per jam
+      count = Math.floor(filter / 60);
     }
 
-    for (let i = count; i >= 0; i--) {
-      const time = new Date(now.getTime() - i * interval * 60000);
-      const label = time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    const intervalMs = intervalMinutes * 60 * 1000;
 
-      // generate data random untuk demo (nanti diganti dengan data real dari API)
-      points.push({
-        name: label,
-        gagal: Math.floor(Math.random() * (ssh?.summary?.totalFailed || 10) / count),
-        sukses: Math.floor(Math.random() * (ssh?.summary?.totalSuccess || 5) / count),
-      });
+    // filter events yang dalam range waktu
+    const eventsInRange = (ssh?.allEvents || []).filter((e) => {
+      const eventTime = new Date(e.timestamp).getTime();
+      return eventTime >= startTime && eventTime <= now.getTime();
+    });
+
+    // buat bucket untuk setiap interval
+    const points = [];
+    for (let i = count; i >= 0; i--) {
+      const bucketEnd = now.getTime() - i * intervalMs;
+      const bucketStart = bucketEnd - intervalMs;
+      const bucketTime = new Date(bucketEnd);
+
+      // hitung events dalam bucket ini
+      let gagal = 0;
+      let sukses = 0;
+
+      for (const event of eventsInRange) {
+        const eventTime = new Date(event.timestamp).getTime();
+        if (eventTime > bucketStart && eventTime <= bucketEnd) {
+          if (event.event_type === 'failed') {
+            gagal++;
+          } else if (event.event_type === 'success') {
+            sukses++;
+          }
+        }
+      }
+
+      const label = bucketTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      points.push({ name: label, gagal, sukses });
     }
 
     return points;
