@@ -125,6 +125,14 @@ export default function Sidebar() {
                         </svg>
                         <span>SSH Events</span>
                     </Link>
+                    <Link href="/threats" className={`nav-link ${isActive('/threats') ? 'active' : ''}`}>
+                        <svg className="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                            <path d="M12 8v4" />
+                            <path d="M12 16h.01" />
+                        </svg>
+                        <span>Threat Scanner</span>
+                    </Link>
                     <Link href="/reports" className={`nav-link ${isActive('/reports') ? 'active' : ''}`}>
                         <svg className="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M21 21H4.6C4.03995 21 3.75992 21 3.54601 20.891C3.35785 20.7951 3.20487 20.6422 3.10899 20.454C3 20.2401 3 19.9601 3 19.4V3" />

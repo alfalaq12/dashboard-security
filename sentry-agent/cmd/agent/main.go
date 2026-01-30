@@ -98,6 +98,37 @@ func main() {
 		}
 	}()
 
+	// Initialize Threat collector (backdoor + crypto mining detection)
+	if cfg.EnableThreatScan {
+		threatCollector := collector.NewThreatCollector(
+			cfg.ScanPaths,
+			cfg.ScanExclude,
+			cfg.ThreatInterval,
+			cfg.CPUThreshold,
+		)
+		threatCollector.Start()
+		log.Printf("🛡️  Threat scanner started (paths: %v, interval: %ds)", cfg.ScanPaths, cfg.ThreatInterval)
+
+		// Process threat findings
+		go func() {
+			for finding := range threatCollector.Findings() {
+				icon := "🐚"
+				if finding.Category == "cryptominer" {
+					icon = "⛏️"
+				}
+				log.Printf("%s THREAT: [%s] %s - %s (Level: %s)",
+					icon, finding.Category, finding.ThreatType,
+					finding.MatchedRules, finding.ThreatLevel)
+
+				if err := client.Send("threat_scan", finding); err != nil {
+					log.Printf("❌ Failed to send threat finding: %v", err)
+				}
+			}
+		}()
+	} else {
+		log.Println("⚠️  Threat scanning disabled (set SENTRY_ENABLE_THREAT_SCAN=true to enable)")
+	}
+
 	// Wait for shutdown signal
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
