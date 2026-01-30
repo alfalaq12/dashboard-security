@@ -14,8 +14,8 @@ services:
       - NODE_ENV=production
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key}
     volumes:
-      # Persist data folder for JSON storage
-      - ./data:/app/data
+      # Named volume for data persistence (Docker handles permissions)
+      - sentry-data:/app/data
     networks:
       - sentry-network
     healthcheck:
@@ -48,3 +48,8 @@ services:
 networks:
   sentry-network:
     driver: bridge
+
+# Named volumes for data persistence
+volumes:
+  sentry-data:
+    driver: local
