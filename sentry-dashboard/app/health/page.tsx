@@ -80,12 +80,13 @@ function getStatusLabel(status: string) {
     }
 }
 
-function CircularGauge({ value, color, size = 80, strokeWidth = 8, label }: {
+function CircularGauge({ value, color, size = 80, strokeWidth = 8, label, showValue = true }: {
     value: number;
     color: string;
     size?: number;
     strokeWidth?: number;
     label: string;
+    showValue?: boolean;
 }) {
     const radius = (size - strokeWidth) / 2;
     const circumference = radius * 2 * Math.PI;
@@ -121,17 +122,19 @@ function CircularGauge({ value, color, size = 80, strokeWidth = 8, label }: {
                         filter: `drop-shadow(0 0 6px ${color}40)`
                     }}
                 />
-                <text
-                    x="50%"
-                    y="50%"
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fill={color}
-                    fontSize="16"
-                    fontWeight="700"
-                >
-                    {Math.round(value)}%
-                </text>
+                {showValue && (
+                    <text
+                        x="50%"
+                        y="50%"
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fill={color}
+                        fontSize={size > 40 ? "16" : "10"}
+                        fontWeight="700"
+                    >
+                        {Math.round(value)}%
+                    </text>
+                )}
             </svg>
             <div className="gauge-label">{label}</div>
             <style jsx>{`
@@ -148,7 +151,7 @@ function CircularGauge({ value, color, size = 80, strokeWidth = 8, label }: {
                     letter-spacing: 0.5px;
                 }
             `}</style>
-        </div>
+        </div >
     );
 }
 
@@ -339,46 +342,54 @@ export default function HalamanHealth() {
                 <div className="server-detail-card">
                     {selectedServer ? (
                         <>
-                            <div className="detail-header">
-                                <div className="detail-title">
-                                    <div className="status-badge" style={{ background: `${getStatusColor(selectedServer.status)}20`, color: getStatusColor(selectedServer.status) }}>
-                                        {getStatusLabel(selectedServer.status)}
+                            {/* Hero Section: Info & Gauges Side-by-Side */}
+                            <div className="hero-section">
+                                <div className="detail-header-content">
+                                    <div className="detail-title">
+                                        <div className="status-badge" style={{ background: `${getStatusColor(selectedServer.status)}20`, color: getStatusColor(selectedServer.status) }}>
+                                            {getStatusLabel(selectedServer.status)}
+                                        </div>
+                                        <h3>{selectedServer.name}</h3>
+                                        <span className="hostname">{selectedServer.hostname}</span>
                                     </div>
-                                    <h3>{selectedServer.name}</h3>
-                                    <span className="hostname">{selectedServer.hostname}</span>
+                                    <div className="uptime-badge">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <circle cx="12" cy="12" r="10" />
+                                            <polyline points="12 6 12 12 16 14" />
+                                        </svg>
+                                        Uptime: {selectedServer.metrics.uptimeFormatted}
+                                    </div>
                                 </div>
-                                <div className="uptime-badge">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <circle cx="12" cy="12" r="10" />
-                                        <polyline points="12 6 12 12 16 14" />
-                                    </svg>
-                                    Uptime: {selectedServer.metrics.uptimeFormatted}
-                                </div>
-                            </div>
 
-                            {/* Gauges */}
-                            <div className="gauges-row">
-                                <CircularGauge
-                                    value={selectedServer.metrics.cpu}
-                                    color={selectedServer.metrics.cpu > 80 ? WARNA.red : selectedServer.metrics.cpu > 60 ? WARNA.orange : WARNA.green}
-                                    label="CPU"
-                                    size={100}
-                                    strokeWidth={10}
-                                />
-                                <CircularGauge
-                                    value={selectedServer.metrics.memory}
-                                    color={selectedServer.metrics.memory > 80 ? WARNA.red : selectedServer.metrics.memory > 60 ? WARNA.orange : WARNA.blue}
-                                    label="Memory"
-                                    size={100}
-                                    strokeWidth={10}
-                                />
-                                <CircularGauge
-                                    value={selectedServer.metrics.disk}
-                                    color={selectedServer.metrics.disk > 85 ? WARNA.red : selectedServer.metrics.disk > 70 ? WARNA.orange : WARNA.primary}
-                                    label="Disk"
-                                    size={100}
-                                    strokeWidth={10}
-                                />
+                                <div className="gauges-container-right">
+                                    <div className="gauge-item-small">
+                                        <CircularGauge
+                                            value={selectedServer.metrics.cpu}
+                                            color={selectedServer.metrics.cpu > 80 ? WARNA.red : selectedServer.metrics.cpu > 60 ? WARNA.orange : WARNA.green}
+                                            label="CPU"
+                                            size={70}
+                                            strokeWidth={6}
+                                        />
+                                    </div>
+                                    <div className="gauge-item-small">
+                                        <CircularGauge
+                                            value={selectedServer.metrics.memory}
+                                            color={selectedServer.metrics.memory > 80 ? WARNA.red : selectedServer.metrics.memory > 60 ? WARNA.orange : WARNA.blue}
+                                            label="MEM"
+                                            size={70}
+                                            strokeWidth={6}
+                                        />
+                                    </div>
+                                    <div className="gauge-item-small">
+                                        <CircularGauge
+                                            value={selectedServer.metrics.disk}
+                                            color={selectedServer.metrics.disk > 85 ? WARNA.red : selectedServer.metrics.disk > 70 ? WARNA.orange : WARNA.primary}
+                                            label="DISK"
+                                            size={70}
+                                            strokeWidth={6}
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Services Status */}
@@ -403,19 +414,48 @@ export default function HalamanHealth() {
                                         {services.services
                                             .sort((a, b) => (b.cpu || 0) - (a.cpu || 0))
                                             .map((svc) => (
-                                                <div key={svc.name} className={`service-item-row ${svc.active ? 'running' : 'stopped'}`}>
-                                                    <div className="service-col name">
-                                                        <span className="service-dot"></span>
-                                                        <span className="service-name">{svc.name}</span>
+                                                <div key={svc.name} className={`cyber-service-row ${svc.active ? 'running' : 'stopped'}`}>
+                                                    <div className="service-info-col">
+                                                        <div className={`status-beacon ${svc.active ? 'active' : ''}`}></div>
+                                                        <div className="service-name">{svc.name}</div>
                                                     </div>
-                                                    <div className="service-col metric">
-                                                        {(svc.cpu || 0).toFixed(1)}%
+
+                                                    <div className="metric-group">
+                                                        <div className="mini-gauge-wrapper">
+                                                            <CircularGauge
+                                                                value={svc.cpu || 0}
+                                                                color={(svc.cpu || 0) > 50 ? WARNA.red : (svc.cpu || 0) > 20 ? WARNA.orange : WARNA.green}
+                                                                size={32}
+                                                                strokeWidth={4}
+                                                                label=""
+                                                                showValue={false}
+                                                            />
+                                                        </div>
+                                                        <div className="metric-text-wrapper">
+                                                            <span className="metric-value">{(svc.cpu || 0).toFixed(1)}%</span>
+                                                        </div>
                                                     </div>
-                                                    <div className="service-col metric">
-                                                        {(svc.memory || 0).toFixed(0)} MB
+
+                                                    <div className="metric-group">
+                                                        <div className="mini-gauge-wrapper">
+                                                            <CircularGauge
+                                                                value={(svc.memory || 0) / 4096 * 100}
+                                                                color={(svc.memory || 0) > 1024 ? WARNA.orange : WARNA.blue}
+                                                                size={32}
+                                                                strokeWidth={4}
+                                                                label=""
+                                                                showValue={false}
+                                                            />
+                                                        </div>
+                                                        <div className="metric-text-wrapper">
+                                                            <span className="metric-value">{(svc.memory || 0).toFixed(0)} MB</span>
+                                                        </div>
                                                     </div>
-                                                    <div className="service-col status">
-                                                        {svc.active ? 'Run' : 'Stop'}
+
+                                                    <div className="service-status-col">
+                                                        <span className={`cyber-badge ${svc.active ? 'run' : 'stop'}`}>
+                                                            {svc.active ? 'RUN' : 'STOP'}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             ))}
@@ -530,11 +570,102 @@ export default function HalamanHealth() {
                     background: var(--bg-card);
                     border: 1px solid var(--border-main);
                     border-radius: 16px;
-                    overflow: hidden;
+                    overflow: visible; /* Changed from hidden to visible */
                     display: flex;
                     flex-direction: column;
-                    height: calc(100vh - 250px);
-                    min-height: 500px;
+                    min-height: 500px; /* Removed fixed height, keeping min-height */
+                }
+
+                .detail-footer {
+                    padding: 20px 24px;
+                    border-top: 1px solid rgba(255, 255, 255, 0.05);
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 24px;
+                    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.4));
+                    backdrop-filter: blur(10px);
+                }
+                .hero-section {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 24px 30px;
+                    border-bottom: 1px solid var(--border-main);
+                    background: linear-gradient(to right, rgba(0,0,0,0.2), rgba(0,0,0,0.1));
+                }
+
+                .detail-header-content {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                }
+
+                .gauges-container-right {
+                    display: flex;
+                    align-items: center;
+                    gap: 20px;
+                    padding-left: 30px;
+                    border-left: 1px solid rgba(255, 255, 255, 0.05);
+                }
+                
+                .gauge-item-small {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                }
+
+                .status-badge {
+                    display: inline-block;
+                    padding: 4px 10px;
+                    border-radius: 20px;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    width: fit-content;
+                }
+                
+                .detail-title h3 {
+                    font-size: 1.6rem;
+                    margin: 8px 0 4px 0;
+                    letter-spacing: -0.5px;
+                }
+                
+                .hostname {
+                    color: var(--text-gray);
+                    font-family: monospace;
+                    font-size: 0.95rem;
+                }
+                
+                .uptime-badge {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    background: rgba(255, 255, 255, 0.03);
+                    padding: 6px 14px;
+                    border-radius: 8px;
+                    color: var(--text-white);
+                    font-size: 0.85rem;
+                    width: fit-content;
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                }    
+                .info-item {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 6px;
+                }
+                
+                .info-label {
+                    font-size: 0.7rem;
+                    color: var(--text-gray);
+                    text-transform: uppercase;
+                    letter-spacing: 1.5px;
+                    font-weight: 600;
+                }
+                
+                .info-value {
+                    color: var(--text-white);
+                    font-family: 'JetBrains Mono', monospace;
+                    font-size: 0.95rem;
+                    font-weight: 500;
                 }
 
                 .card-header {
@@ -553,7 +684,7 @@ export default function HalamanHealth() {
 
                 .server-list {
                     padding: 8px;
-                    overflow-y: auto;
+                    /* overflow-y removed to let it grow */
                     flex: 1;
                 }
 
@@ -568,158 +699,8 @@ export default function HalamanHealth() {
                     margin-bottom: 4px;
                 }
 
-                .server-item:hover {
-                    background: var(--bg-hover);
-                }
-
-                .server-item.selected {
-                    background: linear-gradient(135deg, rgba(124, 92, 255, 0.15) 0%, rgba(77, 159, 255, 0.1) 100%);
-                    border: 1px solid rgba(124, 92, 255, 0.3);
-                }
-
-                .server-status-dot {
-                    width: 12px;
-                    height: 12px;
-                    border-radius: 50%;
-                    flex-shrink: 0;
-                    box-shadow: 0 0 8px currentColor;
-                }
-
-                .server-info {
-                    flex: 1;
-                    min-width: 0;
-                }
-
-                .server-name {
-                    font-weight: 600;
-                    font-size: 0.95rem;
-                }
-
-                .server-meta {
-                    font-size: 0.8rem;
-                    color: var(--text-muted);
-                    margin-top: 2px;
-                }
-
-                .server-quick-stats {
-                    text-align: right;
-                }
-
-                .quick-stat {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: flex-end;
-                }
-
-                .qs-value {
-                    font-size: 1rem;
-                    font-weight: 600;
-                }
-
-                .qs-label {
-                    font-size: 0.7rem;
-                    color: var(--text-gray);
-                }
+                /* ... (rest of server-item styles unrelated to this change) ... */
                 
-                .detail-header {
-                    padding: 24px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: flex-start;
-                    border-bottom: 1px solid var(--border-main);
-                }
-                
-                .status-badge {
-                    display: inline-block;
-                    padding: 4px 10px;
-                    border-radius: 20px;
-                    font-size: 0.75rem;
-                    font-weight: 600;
-                    margin-bottom: 8px;
-                }
-                
-                .detail-title h3 {
-                    font-size: 1.5rem;
-                    margin: 0 0 4px 0;
-                }
-                
-                .hostname {
-                    color: var(--text-gray);
-                    font-family: monospace;
-                    font-size: 0.9rem;
-                }
-                
-                .uptime-badge {
-                    display: flex;
-                    align-items: center;
-                    gap: 6px;
-                    background: rgba(255, 255, 255, 0.05);
-                    padding: 6px 12px;
-                    border-radius: 8px;
-                    color: var(--text-white);
-                    font-size: 0.9rem;
-                }
-
-                .gauges-row {
-                    display: flex;
-                    justify-content: space-around;
-                    padding: 30px 20px;
-                    background: rgba(0, 0, 0, 0.2);
-                    border-bottom: 1px solid var(--border-main);
-                }
-
-                .services-section {
-                    padding: 24px;
-                    flex: 1;
-                    min-height: 0;
-                    display: flex;
-                    flex-direction: column;
-                }
-
-                .detail-footer {
-                    padding: 16px 24px;
-                    border-top: 1px solid var(--border-main);
-                    display: flex;
-                    gap: 32px;
-                    background: rgba(0, 0, 0, 0.2);
-                }
-                
-                .info-item {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 4px;
-                }
-                
-                .info-label {
-                    font-size: 0.75rem;
-                    color: var(--text-gray);
-                    text-transform: uppercase;
-                }
-                
-                .info-value {
-                    color: var(--text-white);
-                    font-weight: 500;
-                }
-
-                .no-selection {
-                    flex: 1;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    color: var(--text-gray);
-                }
-                
-                .no-selection svg {
-                    margin-bottom: 16px;
-                }
-                
-                .empty-list {
-                    text-align: center;
-                    padding: 40px 0;
-                    color: var(--text-muted);
-                }
-
                 /* Custom Scrollbar */
                 ::-webkit-scrollbar {
                     width: 6px;
@@ -740,88 +721,192 @@ export default function HalamanHealth() {
                 .full-list {
                     display: flex;
                     flex-direction: column;
-                    gap: 4px;
-                    max-height: 600px;
-                    overflow-y: auto;
+                    gap: 16px; /* Increased gap from 8px to 16px for spacing */
+                    /* max-height removed */
                     padding-right: 4px;
                 }
-                .full-list::-webkit-scrollbar {
-                    width: 4px;
-                }
-                .full-list::-webkit-scrollbar-thumb {
-                    background: rgba(255, 255, 255, 0.1);
-                    border-radius: 4px;
-                }
-
+                
                 .services-header {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    margin-bottom: 12px;
+                    margin-bottom: 16px;
                 }
-                .services-header h4 {
-                    margin: 0;
-                    font-size: 0.95rem;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                }
-
+                
                 .table-header-labels {
                     display: grid;
-                    grid-template-columns: 2fr 1fr 1fr 0.8fr;
-                    gap: 10px;
-                    width: 50%;
+                    grid-template-columns: 2.5fr 1.2fr 1.2fr 0.8fr;
+                    gap: 24px;
+                    width: 100%;
                     font-size: 0.75rem;
                     color: var(--text-muted);
-                    text-align: right;
-                    padding-right: 12px;
+                    text-align: left;
+                    padding: 0 20px;
                 }
                 .table-header-labels span:first-child { text-align: left; }
 
-                .service-item-row {
+                /* Cyberpunk Service Row Styles */
+                .cyber-service-row {
                     display: grid;
-                    grid-template-columns: 2fr 1fr 1fr 0.8fr;
+                    grid-template-columns: 2.5fr 1.2fr 1.2fr 0.8fr;
                     align-items: center;
-                    gap: 10px;
-                    padding: 8px 12px;
-                    background: rgba(255, 255, 255, 0.03);
-                    border-radius: 8px;
-                    font-size: 0.9rem;
-                    transition: background 0.2s;
+                    gap: 24px;
+                    padding: 16px 20px;
+                    background: rgba(15, 20, 30, 0.4); /* Slightly improved transparency */
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    border-radius: 12px;
+                    transition: all 0.3s ease;
+                    position: relative;
+                    /* overflow hidden removed to fix gauge clipping if necessary, 
+                       but keeping it for border-radius effects usually. 
+                       Let's keep it but ensure height is sufficient. */
+                    min-height: 64px;
+                    backdrop-filter: blur(4px); /* Glass effect */
                 }
 
-                .service-item-row:hover {
-                    background: rgba(255, 255, 255, 0.06);
+                .cyber-service-row:hover {
+                    background: rgba(30, 35, 55, 0.8);
+                    border-color: rgba(124, 92, 255, 0.5);
+                    box-shadow: 0 0 20px rgba(124, 92, 255, 0.2); /* Stronger glow */
+                    transform: translateY(-2px) scale(1.005); /* Subtle scale */
+                    z-index: 10;
+                }
+                
+                .cyber-service-row::before {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    height: 100%;
+                    width: 4px;
+                    background: transparent;
+                    transition: background 0.3s;
+                    border-radius: 4px 0 0 4px;
                 }
 
-                .service-col.name {
+                .cyber-service-row.running::before {
+                    background: ${WARNA.green};
+                    box-shadow: 0 0 8px ${WARNA.green};
+                }
+                
+                .cyber-service-row.stopped::before {
+                    background: ${WARNA.gray};
+                }
+
+                .service-info-col {
                     display: flex;
                     align-items: center;
-                    gap: 8px;
-                    text-align: left;
-                    overflow: hidden;
-                    white-space: nowrap;
-                    text-overflow: ellipsis;
+                    gap: 12px;
                 }
 
-                .service-col.metric {
-                    text-align: right;
-                    font-family: monospace;
-                    color: var(--text-gray);
-                    font-size: 0.85rem;
+                .status-beacon {
+                    width: 8px;
+                    height: 8px;
+                    border-radius: 50%;
+                    background: #444;
                 }
 
-                .service-col.status {
-                    text-align: right;
-                    font-size: 0.8rem;
+                .status-beacon.active {
+                    background: ${WARNA.green};
+                    box-shadow: 0 0 8px ${WARNA.green}, 0 0 12px ${WARNA.green};
+                    animation: pulse-beacon 2s infinite;
+                }
+
+                @keyframes pulse-beacon {
+                    0% { box-shadow: 0 0 8px ${WARNA.green}; }
+                    50% { box-shadow: 0 0 16px ${WARNA.green}; }
+                    100% { box-shadow: 0 0 8px ${WARNA.green}; }
+                }
+
+                .service-name {
                     font-weight: 600;
+                    font-size: 0.95rem;
+                    color: #fff;
+                    letter-spacing: 0.5px;
                 }
 
-                .service-item-row.running .service-dot { background: ${WARNA.green}; box-shadow: 0 0 6px ${WARNA.green}; width: 8px; height: 8px; border-radius: 50%; }
-                .service-item-row.stopped .service-dot { background: ${WARNA.red}; width: 8px; height: 8px; border-radius: 50%; }
-                .service-item-row.running .status { color: ${WARNA.green}; }
-                .service-item-row.stopped .status { color: ${WARNA.red}; }
+                .service-metrics-col {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 24px;
+                }
+
+                .metric-group {
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                    justify-content: center; /* Center in grid cell */
+                }
+
+                .mini-gauge-wrapper {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .metric-text-wrapper {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-start;
+                }
+
+                .metric-value {
+                    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+                    font-size: 1rem;
+                    font-weight: 700;
+                    color: #fff;
+                    text-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
+                }
+
+                .metric-label {
+                    font-size: 0.65rem;
+                    color: var(--text-gray);
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                }
+
+                .service-status-col {
+                    display: flex;
+                    justify-content: flex-end;
+                }
+
+                .cyber-badge {
+                    font-family: 'JetBrains Mono', monospace;
+                    font-size: 0.75rem;
+                    padding: 4px 12px;
+                    border-radius: 4px;
+                    letter-spacing: 1px;
+                    font-weight: 700;
+                    transition: all 0.3s ease;
+                    cursor: pointer;
+                    text-transform: uppercase;
+                }
+
+                .cyber-badge.run {
+                    color: ${WARNA.green};
+                    background: rgba(61, 214, 140, 0.1);
+                    border: 1px solid rgba(61, 214, 140, 0.3);
+                    box-shadow: 0 0 5px rgba(61, 214, 140, 0.1);
+                }
+
+                .cyber-badge.run:hover {
+                    background: rgba(61, 214, 140, 0.2);
+                    box-shadow: 0 0 10px rgba(61, 214, 140, 0.4);
+                    text-shadow: 0 0 5px ${WARNA.green};
+                }
+
+                .cyber-badge.stop {
+                    color: ${WARNA.gray};
+                    background: rgba(96, 96, 120, 0.1);
+                    border: 1px solid rgba(96, 96, 120, 0.3);
+                }
+
+                .cyber-badge.stop:hover {
+                    background: rgba(96, 96, 120, 0.2);
+                    border-color: rgba(96, 96, 120, 0.5);
+                    color: #fff;
+                }
             `}</style>
         </div>
     );

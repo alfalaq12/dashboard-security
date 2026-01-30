@@ -31,8 +31,15 @@ async function appendEvent(payload: StoredPayload) {
     const { readFile } = await import('fs/promises');
     const data = await readFile(EVENTS_FILE, 'utf-8');
     events = JSON.parse(data);
-  } catch {
-    events = [];
+  } catch (error: any) {
+    if (error.code === 'ENOENT') {
+      // File doesn't exist, start with empty array
+      events = [];
+    } else {
+      // Real error (e.g. EBUSY), rethrow to avoid overwriting data
+      console.error('Failed to read events file:', error);
+      throw error;
+    }
   }
 
   // Check for Brute Force (5 failed attempts from same IP in last minute)

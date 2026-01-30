@@ -28,8 +28,12 @@ async function getEvents(): Promise<StoredPayload[]> {
     try {
         const data = await readFile(EVENTS_FILE, 'utf-8');
         return JSON.parse(data);
-    } catch {
-        await writeFile(EVENTS_FILE, '[]');
+    } catch (error: any) {
+        if (error.code === 'ENOENT') {
+            await writeFile(EVENTS_FILE, '[]');
+            return [];
+        }
+        console.error('Error reading events:', error);
         return [];
     }
 }

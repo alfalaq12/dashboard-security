@@ -20,8 +20,20 @@ interface NodePayload {
     receivedAt: string;
 }
 
+// Notification Interface (Duplicated from notifications route for now)
+interface Notification {
+    id: string;
+    type: 'alert' | 'warning' | 'info' | 'success';
+    title: string;
+    message: string;
+    timestamp: string;
+    read: boolean;
+    source?: string;
+}
+
 const DATA_DIR = path.join(process.cwd(), 'data');
 const EVENTS_FILE = path.join(DATA_DIR, 'events.json');
+const NOTIFICATIONS_FILE = path.join(DATA_DIR, 'notifications.json');
 
 async function getEvents(): Promise<NodePayload[]> {
     if (!existsSync(DATA_DIR)) {
@@ -35,6 +47,22 @@ async function getEvents(): Promise<NodePayload[]> {
         await writeFile(EVENTS_FILE, '[]');
         return [];
     }
+}
+
+async function getNotifications(): Promise<Notification[]> {
+    if (!existsSync(NOTIFICATIONS_FILE)) {
+        return [];
+    }
+    try {
+        const data = await readFile(NOTIFICATIONS_FILE, 'utf-8');
+        return JSON.parse(data);
+    } catch {
+        return [];
+    }
+}
+
+async function saveNotifications(notifications: Notification[]): Promise<void> {
+    await writeFile(NOTIFICATIONS_FILE, JSON.stringify(notifications, null, 2));
 }
 
 function formatUptime(seconds: number): string {
@@ -51,6 +79,53 @@ function getHealthStatus(cpu: number, memory: number, disk: number): 'healthy' |
     if (cpu > 90 || memory > 90 || disk > 90) return 'critical';
     if (cpu > 70 || memory > 70 || disk > 80) return 'warning';
     return 'healthy';
+}
+
+// Helper to add notification if it doesn't exist
+async function checkAndNotify(server: NodePayload, cpu: number, memory: number, disk: number) {
+    // Only notify for critical levels
+    if (cpu <= 90 && memory <= 90 && disk <= 90) return;
+
+    let issue = '';
+    if (cpu > 90) issue = `High CPU Usage (${Math.round(cpu)}%)`;
+    else if (memory > 90) issue = `High Memory Usage (${Math.round(memory)}%)`;
+    else if (disk > 90) issue = `High Disk Usage (${Math.round(disk)}%)`;
+
+    const title = `Critical: ${server.nodeName}`;
+    const message = `Server ${server.nodeName} is experiencing ${issue}. Please investigate immediately.`;
+
+    try {
+        const notifications = await getNotifications();
+
+        // Spam prevention: Check if unread notification exists for this server today
+        const hasUnread = notifications.some(n =>
+            !n.read &&
+            n.title === title &&
+            n.message.includes(issue) &&
+            new Date(n.timestamp).toDateString() === new Date().toDateString()
+        );
+
+        if (!hasUnread) {
+            const newNotification: Notification = {
+                id: Date.now().toString(),
+                type: 'alert',
+                title,
+                message,
+                timestamp: new Date().toISOString(),
+                read: false,
+                source: 'System Health'
+            };
+
+            notifications.unshift(newNotification);
+
+            // Keep limit
+            if (notifications.length > 100) notifications.splice(100);
+
+            await saveNotifications(notifications);
+        }
+    } catch (error) {
+        console.error('Failed to process notifications:', error);
+    }
 }
 
 export async function GET() {
@@ -70,7 +145,7 @@ export async function GET() {
             });
 
         const now = new Date();
-        const servers = Array.from(nodeHeartbeats.values()).map((node) => {
+        const servers = await Promise.all(Array.from(nodeHeartbeats.values()).map(async (node) => {
             const lastSeen = new Date(node.timestamp);
             const isOnline = (now.getTime() - lastSeen.getTime()) < 5 * 60 * 1000; // 5 menit
 
@@ -78,6 +153,11 @@ export async function GET() {
             const memory = node.data?.memory_percent ?? 0;
             const disk = node.data?.disk_percent ?? 0;
             const uptime = node.data?.uptime_seconds ?? 0;
+
+            // Check and trigger notification if online and critical
+            if (isOnline) {
+                await checkAndNotify(node, cpu, memory, disk);
+            }
 
             return {
                 id: node.id,
@@ -95,7 +175,7 @@ export async function GET() {
                 },
                 status: isOnline ? getHealthStatus(cpu, memory, disk) : 'offline'
             };
-        });
+        }));
 
         // Sort by status (critical first, then warning, then healthy)
         const statusOrder: { [key: string]: number } = { critical: 0, warning: 1, healthy: 2, offline: 3 };

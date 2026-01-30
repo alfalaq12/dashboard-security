@@ -8130,5 +8130,20 @@
       "ip": "192.168.99.100",
       "port": "22"
     }
+  },
+  {
+    "id": "test-high-cpu-1769723360756",
+    "nodeName": "Test-Server-High-CPU",
+    "type": "heartbeat",
+    "timestamp": "2026-01-29T21:49:20.756Z",
+    "receivedAt": "2026-01-29T21:49:20.757Z",
+    "data": {
+      "os": "Linux Test",
+      "hostname": "test-server",
+      "cpu_percent": 95,
+      "memory_percent": 40,
+      "disk_percent": 20,
+      "uptime_seconds": 3600
+    }
   }
 ]
