@@ -94,10 +94,12 @@ const FILTER_WAKTU = [
 export default function Dashboard() {
   const [dataNodes, setDataNodes] = useState<ResponseNodes | null>(null);
   const [dataSSH, setDataSSH] = useState<ResponseSSH | null>(null);
+  const [threatStats, setThreatStats] = useState<{ total: number; critical: number; high: number; backdoors: number; miners: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [chartData, setChartData] = useState<Array<{ name: string; gagal: number; sukses: number }>>([]);
   const [filterWaktu, setFilterWaktu] = useState(60);
   const [currentTime, setCurrentTime] = useState(new Date());
+
 
   // Update time every second
   useEffect(() => {
@@ -115,11 +117,17 @@ export default function Dashboard() {
     let count: number;
 
     if (filter <= 1) {
-      intervalMinutes = 0.25;
-      count = 4;
+      // 1 menit: 6 bucket @ 10 detik
+      intervalMinutes = 10 / 60; // 10 detik
+      count = 6;
     } else if (filter <= 5) {
+      // 5 menit: 5 bucket @ 1 menit
       intervalMinutes = 1;
-      count = filter;
+      count = 5;
+    } else if (filter <= 15) {
+      // 15 menit: 5 bucket @ 3 menit
+      intervalMinutes = 3;
+      count = 5;
     } else if (filter <= 60) {
       intervalMinutes = 5;
       count = Math.floor(filter / 5);
@@ -139,7 +147,7 @@ export default function Dashboard() {
     });
 
     const points = [];
-    for (let i = count; i >= 0; i--) {
+    for (let i = count - 1; i >= 0; i--) {
       const bucketEnd = now.getTime() - i * intervalMs;
       const bucketStart = bucketEnd - intervalMs;
       const bucketTime = new Date(bucketEnd);
@@ -158,7 +166,14 @@ export default function Dashboard() {
         }
       }
 
-      const label = bucketTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      // Format label berdasarkan interval
+      let label: string;
+      if (filter <= 1) {
+        // Tampilkan menit:detik untuk interval pendek
+        label = bucketTime.toLocaleTimeString('id-ID', { minute: '2-digit', second: '2-digit' });
+      } else {
+        label = bucketTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      }
       points.push({ name: label, gagal, sukses });
     }
 
@@ -169,16 +184,19 @@ export default function Dashboard() {
   useEffect(() => {
     async function ambilData() {
       try {
-        const [resNodes, resSSH] = await Promise.all([
+        const [resNodes, resSSH, resThreats] = await Promise.all([
           fetch('/api/nodes'),
           fetch('/api/events/ssh'),
+          fetch('/api/threats'),
         ]);
 
         const nodes = await resNodes.json();
         const ssh = await resSSH.json();
+        const threats = await resThreats.json();
 
         setDataNodes(nodes);
         setDataSSH(ssh);
+        setThreatStats(threats.stats || { total: 0, critical: 0, high: 0, backdoors: 0, miners: 0 });
         setChartData(generateChartData(filterWaktu, ssh));
       } catch (err) {
         console.error('Gagal fetch data:', err);
@@ -663,38 +681,195 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Suspicious IPs */}
+        {/* Threat Detection - Combined */}
         <div className="premium-card threats-card">
           <div className="card-header">
             <div className="header-title">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                <line x1="12" y1="9" x2="12" y2="13" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                <path d="M12 8v4" />
+                <path d="M12 16h.01" />
               </svg>
               <h3>Threat Detection</h3>
             </div>
-            <span className={`threat-badge ${(dataSSH?.attackers?.length || 0) > 0 ? 'active' : 'clear'}`}>
-              {(dataSSH?.attackers?.length || 0) > 0 ? `${dataSSH?.attackers?.length} threats` : 'All Clear'}
+            <span className={`threat-badge ${((threatStats?.total || 0) + (dataSSH?.attackers?.length || 0)) > 0 ? 'active' : 'clear'}`}>
+              {((threatStats?.total || 0) + (dataSSH?.attackers?.length || 0)) > 0
+                ? `${(threatStats?.total || 0) + (dataSSH?.attackers?.length || 0)} threats`
+                : 'All Clear'}
             </span>
           </div>
           <div className="card-body">
-            {dataSSH?.attackers && dataSSH.attackers.length > 0 ? (
-              <div className="threats-table">
-                <div className="table-header">
-                  <span>IP Address</span>
-                  <span>Attempts</span>
-                  <span>Status</span>
-                </div>
-                {dataSSH.attackers.slice(0, 6).map((item) => (
-                  <div key={item.ip} className="threat-row">
-                    <code className="ip-address">{item.ip}</code>
-                    <span className="attempt-count">{item.failedAttempts}</span>
-                    <span className={`threat-status ${item.isBruteForce ? 'brute-force' : 'suspicious'}`}>
-                      {item.isBruteForce ? 'Brute Force' : 'Suspicious'}
-                    </span>
+            {((threatStats?.total || 0) > 0 || (dataSSH?.attackers?.length || 0) > 0) ? (
+              <div className="threat-summary">
+                {/* Scanned Threats Section */}
+                {(threatStats?.total || 0) > 0 && (
+                  <div className="threat-section">
+                    <div className="section-header">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                      </svg>
+                      <span>Scanned Threats</span>
+                    </div>
+                    <div className="threat-items">
+                      {(threatStats?.backdoors || 0) > 0 && (
+                        <div className="threat-item backdoor">
+                          <span className="threat-icon">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <polyline points="4 17 10 11 4 5" />
+                              <line x1="12" y1="19" x2="20" y2="19" />
+                            </svg>
+                          </span>
+                          <span className="threat-name">Backdoor</span>
+                          <span className="threat-count">{threatStats?.backdoors}</span>
+                        </div>
+                      )}
+                      {(threatStats?.miners || 0) > 0 && (
+                        <div className="threat-item miner">
+                          <span className="threat-icon">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <rect x="4" y="4" width="16" height="16" rx="2" />
+                              <rect x="9" y="9" width="6" height="6" />
+                            </svg>
+                          </span>
+                          <span className="threat-name">Crypto Miner</span>
+                          <span className="threat-count">{threatStats?.miners}</span>
+                        </div>
+                      )}
+                      {(threatStats?.critical || 0) > 0 && (
+                        <div className="threat-item critical">
+                          <span className="threat-icon">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                            </svg>
+                          </span>
+                          <span className="threat-name">Critical</span>
+                          <span className="threat-count">{threatStats?.critical}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                ))}
+                )}
+
+                {/* SSH Attackers Section */}
+                {(dataSSH?.attackers?.length || 0) > 0 && (
+                  <div className="threat-section">
+                    <div className="section-header">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="15" y1="9" x2="9" y2="15" />
+                        <line x1="9" y1="9" x2="15" y2="15" />
+                      </svg>
+                      <span>SSH Attackers</span>
+                    </div>
+                    <div className="attacker-list">
+                      {dataSSH?.attackers?.slice(0, 4).map((item) => (
+                        <div key={item.ip} className="attacker-row">
+                          <code className="ip-address">{item.ip}</code>
+                          <span className={`threat-status ${item.isBruteForce ? 'brute-force' : 'suspicious'}`}>
+                            {item.isBruteForce ? 'Brute Force' : `${item.failedAttempts} failed`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <style jsx>{`
+                  .threat-summary {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 16px;
+                  }
+                  .threat-section {
+                    background: rgba(0, 0, 0, 0.2);
+                    border-radius: 10px;
+                    padding: 14px;
+                  }
+                  .section-header {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-size: 0.8rem;
+                    font-weight: 600;
+                    color: #a0a0b0;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 12px;
+                  }
+                  .threat-items {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                  }
+                  .threat-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    padding: 10px 12px;
+                    border-radius: 8px;
+                    font-size: 0.9rem;
+                  }
+                  .threat-item.backdoor {
+                    background: rgba(168, 85, 247, 0.1);
+                    border: 1px solid rgba(168, 85, 247, 0.2);
+                    color: #c4b5fd;
+                  }
+                  .threat-item.miner {
+                    background: rgba(245, 158, 11, 0.1);
+                    border: 1px solid rgba(245, 158, 11, 0.2);
+                    color: #fcd34d;
+                  }
+                  .threat-item.critical {
+                    background: rgba(255, 71, 87, 0.1);
+                    border: 1px solid rgba(255, 71, 87, 0.2);
+                    color: #fca5a5;
+                  }
+                  .threat-icon {
+                    display: flex;
+                    align-items: center;
+                  }
+                  .threat-name {
+                    flex: 1;
+                  }
+                  .threat-count {
+                    font-weight: 700;
+                    font-family: monospace;
+                  }
+                  .attacker-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                  }
+                  .attacker-row {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 8px 12px;
+                    background: rgba(255, 107, 107, 0.05);
+                    border-radius: 6px;
+                  }
+                  .ip-address {
+                    font-size: 0.85rem;
+                    color: #10b981;
+                    background: rgba(0, 0, 0, 0.3);
+                    padding: 2px 8px;
+                    border-radius: 4px;
+                  }
+                  .threat-status {
+                    font-size: 0.75rem;
+                    padding: 4px 10px;
+                    border-radius: 12px;
+                    font-weight: 600;
+                  }
+                  .threat-status.brute-force {
+                    background: rgba(255, 71, 87, 0.15);
+                    color: #ff6b6b;
+                  }
+                  .threat-status.suspicious {
+                    background: rgba(255, 165, 2, 0.15);
+                    color: #ffa502;
+                  }
+                `}</style>
               </div>
             ) : (
               <div className="empty-state-premium success">

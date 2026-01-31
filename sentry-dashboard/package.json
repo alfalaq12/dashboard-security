@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "ssh-gateway": "npx tsx server/ssh-gateway.ts",
-    "dev:all": "concurrently \"npm run dev\" \"npm run ssh-gateway\""
+    "dev:all": "concurrently \"npm run dev\" \"npm run ssh-gateway\"",
+    "start:all": "node server.js",
+    "production": "npm run build && npm run start:all"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",

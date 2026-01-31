@@ -123,7 +123,10 @@ export default function Terminal({ credentialId, onDisconnect }: TerminalProps) 
         term.writeln(`\x1b[33mConnecting to server...\x1b[0m`);
 
         try {
-            const wsUrl = `ws://localhost:${process.env.NEXT_PUBLIC_SSH_GATEWAY_PORT || 3001}`;
+            // Use current hostname for production, or localhost for development
+            const wsHost = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+            const wsPort = process.env.NEXT_PUBLIC_SSH_GATEWAY_PORT || '3001';
+            const wsUrl = `ws://${wsHost}:${wsPort}`;
             const ws = new WebSocket(wsUrl);
             wsRef.current = ws;
 
