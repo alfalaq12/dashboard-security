@@ -23,41 +23,121 @@ async function ensureDataDir() {
   }
 }
 
+// Simple mutex for file operations to prevent race conditions
+let fileLock = false;
+const lockQueue: (() => void)[] = [];
+
+async function acquireLock(): Promise<void> {
+  return new Promise((resolve) => {
+    if (!fileLock) {
+      fileLock = true;
+      resolve();
+    } else {
+      lockQueue.push(resolve);
+    }
+  });
+}
+
+function releaseLock(): void {
+  if (lockQueue.length > 0) {
+    const next = lockQueue.shift();
+    if (next) next();
+  } else {
+    fileLock = false;
+  }
+}
+
 async function appendEvent(payload: StoredPayload) {
   await ensureDataDir();
 
-  let events: StoredPayload[] = [];
+  // Acquire lock to prevent race conditions
+  await acquireLock();
+
   try {
-    const { readFile } = await import('fs/promises');
-    const data = await readFile(EVENTS_FILE, 'utf-8');
-    events = JSON.parse(data);
-  } catch (error: any) {
-    if (error.code === 'ENOENT') {
-      // File doesn't exist, start with empty array
-      events = [];
-    } else {
-      // Real error (e.g. EBUSY), rethrow to avoid overwriting data
-      console.error('Failed to read events file:', error);
-      throw error;
+    let events: StoredPayload[] = [];
+    try {
+      const { readFile } = await import('fs/promises');
+      const data = await readFile(EVENTS_FILE, 'utf-8');
+      events = JSON.parse(data);
+    } catch (error: any) {
+      if (error.code === 'ENOENT') {
+        // File doesn't exist, start with empty array
+        events = [];
+      } else if (error instanceof SyntaxError) {
+        // JSON is corrupted, try to repair or start fresh
+        console.error('⚠️ events.json corrupted, attempting repair...');
+        try {
+          // Try to backup corrupted file
+          const { readFile: rf, writeFile: wf } = await import('fs/promises');
+          const corruptedData = await rf(EVENTS_FILE, 'utf-8');
+          const backupFile = path.join(DATA_DIR, `events.backup.${Date.now()}.json`);
+          await wf(backupFile, corruptedData);
+          console.log(`📁 Backed up corrupted file to ${backupFile}`);
+        } catch { }
+        // Start with empty array
+        events = [];
+        console.log('✅ Starting with fresh events array');
+      } else {
+        // Real error (e.g. EBUSY), rethrow
+        console.error('Failed to read events file:', error);
+        throw error;
+      }
     }
-  }
 
-  // Check for Brute Force (5 failed attempts from same IP in last minute)
-  if (payload.type === 'ssh_event' && (payload.data as any).event_type === 'failed') {
-    const ip = (payload.data as any).ip;
-    const oneMinuteAgo = new Date(Date.now() - 60000);
+    // Check for Brute Force (5 failed attempts from same IP in last minute)
+    if (payload.type === 'ssh_event' && (payload.data as any).event_type === 'failed') {
+      const ip = (payload.data as any).ip;
+      const oneMinuteAgo = new Date(Date.now() - 60000);
 
-    // Find failed events from same IP in last minute
-    const recentFailures = events.filter(e =>
-      e.type === 'ssh_event' &&
-      (e.data as any).event_type === 'failed' &&
-      (e.data as any).ip === ip &&
-      new Date(e.timestamp) > oneMinuteAgo
-    );
+      // Find failed events from same IP in last minute
+      const recentFailures = events.filter(e =>
+        e.type === 'ssh_event' &&
+        (e.data as any).event_type === 'failed' &&
+        (e.data as any).ip === ip &&
+        new Date(e.timestamp) > oneMinuteAgo
+      );
 
-    // If this is the 5th attempt (4 previous + current one), trigger alert
-    if (recentFailures.length === 4) {
-      // Import notification logic dynamically to avoid circular deps if any
+      // If this is the 5th attempt (4 previous + current one), trigger alert
+      if (recentFailures.length === 4) {
+        // Import notification logic dynamically to avoid circular deps if any
+        const { readFile: readNotif, writeFile: writeNotif } = await import('fs/promises');
+        const NOTIF_FILE = path.join(DATA_DIR, 'notifications.json');
+
+        let notifications = [];
+        try {
+          if (existsSync(NOTIF_FILE)) {
+            notifications = JSON.parse(await readNotif(NOTIF_FILE, 'utf-8'));
+          }
+        } catch { }
+
+        const newAlert = {
+          id: crypto.randomUUID(),
+          type: 'alert',
+          title: 'Brute Force Detected',
+          message: `High number of failed SSH login attempts detected from ${ip} on ${payload.nodeName}`,
+          timestamp: new Date().toISOString(),
+          read: false,
+          source: 'Security Monitor'
+        };
+
+        notifications.unshift(newAlert);
+        await writeNotif(NOTIF_FILE, JSON.stringify(notifications, null, 2));
+        console.log(`🚨 ALERT CREATED: Brute force from ${ip}`);
+      }
+    }
+
+    // Check for Threat Scan events (backdoor/cryptominer detection)
+    if (payload.type === 'threat_scan') {
+      const threatData = payload.data as {
+        category?: string;
+        threat_type?: string;
+        threat_level?: string;
+        matched_rules?: string[];
+        file_path?: string;
+        process_name?: string;
+      };
+
+      // Create notification for threats
       const { readFile: readNotif, writeFile: writeNotif } = await import('fs/promises');
       const NOTIF_FILE = path.join(DATA_DIR, 'notifications.json');
 
@@ -68,90 +148,55 @@ async function appendEvent(payload: StoredPayload) {
         }
       } catch { }
 
+      // Map threat level to notification type
+      const notifType = threatData.threat_level === 'critical' ? 'alert' :
+        threatData.threat_level === 'high' ? 'warning' : 'info';
+
+      // Create descriptive title based on category
+      const icon = threatData.category === 'cryptominer' ? '⛏️' : '🐚';
+      const categoryLabel = threatData.category === 'cryptominer' ? 'Crypto Miner' : 'Backdoor';
+
+      // Create location info
+      const location = threatData.file_path || threatData.process_name || 'Unknown';
+
       const newAlert = {
         id: crypto.randomUUID(),
-        type: 'alert',
-        title: 'Brute Force Detected',
-        message: `High number of failed SSH login attempts detected from ${ip} on ${payload.nodeName}`,
+        type: notifType,
+        title: `${icon} ${categoryLabel} Detected`,
+        message: `${threatData.threat_type}: ${threatData.matched_rules?.join(', ') || 'Unknown threat'} found at ${location} on ${payload.nodeName}`,
         timestamp: new Date().toISOString(),
         read: false,
-        source: 'Security Monitor'
+        source: 'Threat Scanner'
       };
 
       notifications.unshift(newAlert);
-      await writeNotif(NOTIF_FILE, JSON.stringify(notifications, null, 2));
-      console.log(`🚨 ALERT CREATED: Brute force from ${ip}`);
-    }
-  }
 
-  // Check for Threat Scan events (backdoor/cryptominer detection)
-  if (payload.type === 'threat_scan') {
-    const threatData = payload.data as {
-      category?: string;
-      threat_type?: string;
-      threat_level?: string;
-      matched_rules?: string[];
-      file_path?: string;
-      process_name?: string;
-    };
-
-    // Create notification for threats
-    const { readFile: readNotif, writeFile: writeNotif } = await import('fs/promises');
-    const NOTIF_FILE = path.join(DATA_DIR, 'notifications.json');
-
-    let notifications = [];
-    try {
-      if (existsSync(NOTIF_FILE)) {
-        notifications = JSON.parse(await readNotif(NOTIF_FILE, 'utf-8'));
+      // Keep only last 100 notifications
+      if (notifications.length > 100) {
+        notifications = notifications.slice(0, 100);
       }
-    } catch { }
 
-    // Map threat level to notification type
-    const notifType = threatData.threat_level === 'critical' ? 'alert' :
-      threatData.threat_level === 'high' ? 'warning' : 'info';
-
-    // Create descriptive title based on category
-    const icon = threatData.category === 'cryptominer' ? '⛏️' : '🐚';
-    const categoryLabel = threatData.category === 'cryptominer' ? 'Crypto Miner' : 'Backdoor';
-
-    // Create location info
-    const location = threatData.file_path || threatData.process_name || 'Unknown';
-
-    const newAlert = {
-      id: crypto.randomUUID(),
-      type: notifType,
-      title: `${icon} ${categoryLabel} Detected`,
-      message: `${threatData.threat_type}: ${threatData.matched_rules?.join(', ') || 'Unknown threat'} found at ${location} on ${payload.nodeName}`,
-      timestamp: new Date().toISOString(),
-      read: false,
-      source: 'Threat Scanner'
-    };
-
-    notifications.unshift(newAlert);
-
-    // Keep only last 100 notifications
-    if (notifications.length > 100) {
-      notifications = notifications.slice(0, 100);
+      await writeNotif(NOTIF_FILE, JSON.stringify(notifications, null, 2));
+      console.log(`🚨 THREAT ALERT: ${categoryLabel} - ${threatData.threat_type} on ${payload.nodeName}`);
     }
 
-    await writeNotif(NOTIF_FILE, JSON.stringify(notifications, null, 2));
-    console.log(`🚨 THREAT ALERT: ${categoryLabel} - ${threatData.threat_type} on ${payload.nodeName}`);
+    events.push(payload);
+
+    // Keep only events from last 7 days (time-based retention)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    events = events.filter(e => {
+      const eventTime = new Date(e.receivedAt || e.timestamp);
+      return eventTime >= sevenDaysAgo;
+    });
+
+    await writeFile(EVENTS_FILE, JSON.stringify(events, null, 2));
+  } finally {
+    // Always release lock
+    releaseLock();
   }
-
-  events.push(payload);
-
-  // Keep only events from last 7 days (time-based retention)
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-  events = events.filter(e => {
-    const eventTime = new Date(e.receivedAt || e.timestamp);
-    return eventTime >= sevenDaysAgo;
-  });
-
-  await writeFile(EVENTS_FILE, JSON.stringify(events, null, 2));
 }
-
 export async function POST(request: NextRequest) {
   try {
     // Validate API Key

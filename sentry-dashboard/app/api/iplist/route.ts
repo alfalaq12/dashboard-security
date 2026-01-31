@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { readFile, mkdir, writeFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
+import { withFileLock } from '@/lib/file-lock';
 
 interface IPRule {
     id: string;
@@ -14,23 +15,29 @@ interface IPRule {
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const IPLIST_FILE = path.join(DATA_DIR, 'iplist.json');
+const LOCK_KEY = 'iplist.json';
 
-async function getIPList(): Promise<IPRule[]> {
+async function ensureDataDir() {
     if (!existsSync(DATA_DIR)) {
         await mkdir(DATA_DIR, { recursive: true });
     }
+}
 
+async function getIPListUnsafe(): Promise<IPRule[]> {
+    await ensureDataDir();
     try {
         const data = await readFile(IPLIST_FILE, 'utf-8');
         return JSON.parse(data);
-    } catch {
-        // Start with empty IP list for production
+    } catch (error: unknown) {
+        if (error instanceof SyntaxError) {
+            console.error('⚠️ iplist.json corrupted, resetting...');
+        }
         await writeFile(IPLIST_FILE, '[]');
         return [];
     }
 }
 
-async function saveIPList(iplist: IPRule[]): Promise<void> {
+async function saveIPListUnsafe(iplist: IPRule[]): Promise<void> {
     await writeFile(IPLIST_FILE, JSON.stringify(iplist, null, 2));
 }
 
@@ -40,36 +47,37 @@ export async function GET(request: Request) {
         const typeFilter = searchParams.get('type');
         const search = searchParams.get('search')?.toLowerCase();
 
-        let iplist = await getIPList();
+        const result = await withFileLock(LOCK_KEY, async () => {
+            let iplist = await getIPListUnsafe();
 
-        // Filter by type
-        if (typeFilter && typeFilter !== 'all') {
-            iplist = iplist.filter(ip => ip.type === typeFilter);
-        }
+            // Filter by type
+            if (typeFilter && typeFilter !== 'all') {
+                iplist = iplist.filter((ip: IPRule) => ip.type === typeFilter);
+            }
 
-        // Search by IP
-        if (search) {
-            iplist = iplist.filter(ip =>
-                ip.ip.toLowerCase().includes(search) ||
-                ip.reason.toLowerCase().includes(search)
+            // Search by IP
+            if (search) {
+                iplist = iplist.filter((ip: IPRule) =>
+                    ip.ip.toLowerCase().includes(search) ||
+                    ip.reason.toLowerCase().includes(search)
+                );
+            }
+
+            // Sort by createdAt desc
+            iplist.sort((a: IPRule, b: IPRule) =>
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
             );
-        }
 
-        // Sort by createdAt desc
-        iplist.sort((a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
+            const summary = {
+                total: iplist.length,
+                blocked: iplist.filter((ip: IPRule) => ip.type === 'blocked').length,
+                whitelisted: iplist.filter((ip: IPRule) => ip.type === 'whitelisted').length
+            };
 
-        const summary = {
-            total: iplist.length,
-            blocked: iplist.filter(ip => ip.type === 'blocked').length,
-            whitelisted: iplist.filter(ip => ip.type === 'whitelisted').length
-        };
-
-        return NextResponse.json({
-            iplist,
-            summary
+            return { iplist, summary };
         });
+
+        return NextResponse.json(result);
     } catch (error) {
         console.error('Error fetching IP list:', error);
         return NextResponse.json(
@@ -99,29 +107,34 @@ export async function POST(request: Request) {
             );
         }
 
-        const iplist = await getIPList();
+        const result = await withFileLock(LOCK_KEY, async () => {
+            const iplist = await getIPListUnsafe();
 
-        // Check if IP already exists
-        if (iplist.some(rule => rule.ip === ip)) {
-            return NextResponse.json(
-                { error: 'IP address already exists' },
-                { status: 400 }
-            );
+            // Check if IP already exists
+            if (iplist.some((rule: IPRule) => rule.ip === ip)) {
+                return { error: 'IP address already exists' };
+            }
+
+            const newRule: IPRule = {
+                id: Date.now().toString(),
+                ip,
+                type: type || 'blocked',
+                reason: reason || 'No reason provided',
+                createdAt: new Date().toISOString(),
+                createdBy: createdBy || 'admin'
+            };
+
+            iplist.push(newRule);
+            await saveIPListUnsafe(iplist);
+
+            return { success: true, rule: newRule };
+        });
+
+        if ('error' in result) {
+            return NextResponse.json({ error: result.error }, { status: 400 });
         }
 
-        const newRule: IPRule = {
-            id: Date.now().toString(),
-            ip,
-            type: type || 'blocked',
-            reason: reason || 'No reason provided',
-            createdAt: new Date().toISOString(),
-            createdBy: createdBy || 'admin'
-        };
-
-        iplist.push(newRule);
-        await saveIPList(iplist);
-
-        return NextResponse.json({ success: true, rule: newRule });
+        return NextResponse.json(result);
     } catch (error) {
         console.error('Error adding IP rule:', error);
         return NextResponse.json(
@@ -134,25 +147,33 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
     try {
         const { id, action, type } = await request.json();
-        const iplist = await getIPList();
 
-        const rule = iplist.find(r => r.id === id);
-        if (!rule) {
+        const result = await withFileLock(LOCK_KEY, async () => {
+            const iplist = await getIPListUnsafe();
+
+            const rule = iplist.find((r: IPRule) => r.id === id);
+            if (!rule) {
+                return { error: 'Rule not found', status: 404 };
+            }
+
+            if (action === 'toggle') {
+                rule.type = rule.type === 'blocked' ? 'whitelisted' : 'blocked';
+            } else if (action === 'updateType' && type) {
+                rule.type = type;
+            }
+
+            await saveIPListUnsafe(iplist);
+            return { success: true, rule };
+        });
+
+        if ('error' in result) {
             return NextResponse.json(
-                { error: 'Rule not found' },
-                { status: 404 }
+                { error: result.error },
+                { status: result.status || 400 }
             );
         }
 
-        if (action === 'toggle') {
-            rule.type = rule.type === 'blocked' ? 'whitelisted' : 'blocked';
-        } else if (action === 'updateType' && type) {
-            rule.type = type;
-        }
-
-        await saveIPList(iplist);
-
-        return NextResponse.json({ success: true, rule });
+        return NextResponse.json(result);
     } catch (error) {
         console.error('Error updating IP rule:', error);
         return NextResponse.json(
@@ -174,20 +195,28 @@ export async function DELETE(request: Request) {
             );
         }
 
-        const iplist = await getIPList();
-        const idx = iplist.findIndex(r => r.id === id);
+        const result = await withFileLock(LOCK_KEY, async () => {
+            const iplist = await getIPListUnsafe();
+            const idx = iplist.findIndex((r: IPRule) => r.id === id);
 
-        if (idx === -1) {
+            if (idx === -1) {
+                return { error: 'Rule not found', status: 404 };
+            }
+
+            iplist.splice(idx, 1);
+            await saveIPListUnsafe(iplist);
+
+            return { success: true };
+        });
+
+        if ('error' in result) {
             return NextResponse.json(
-                { error: 'Rule not found' },
-                { status: 404 }
+                { error: result.error },
+                { status: result.status || 400 }
             );
         }
 
-        iplist.splice(idx, 1);
-        await saveIPList(iplist);
-
-        return NextResponse.json({ success: true });
+        return NextResponse.json(result);
     } catch (error) {
         console.error('Error deleting IP rule:', error);
         return NextResponse.json(

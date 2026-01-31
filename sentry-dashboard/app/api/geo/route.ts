@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { readFile, mkdir, writeFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
+import { withFileLock } from '@/lib/file-lock';
 
 interface StoredPayload {
     id: string;
@@ -30,31 +31,42 @@ interface GeoCache {
 const DATA_DIR = path.join(process.cwd(), 'data');
 const EVENTS_FILE = path.join(DATA_DIR, 'events.json');
 const GEO_CACHE_FILE = path.join(DATA_DIR, 'geo-cache.json');
+const EVENTS_LOCK = 'events.json';
+const GEO_CACHE_LOCK = 'geo-cache.json';
 
-async function getEvents(): Promise<StoredPayload[]> {
+async function ensureDataDir() {
     if (!existsSync(DATA_DIR)) {
         await mkdir(DATA_DIR, { recursive: true });
     }
+}
 
+async function getEventsUnsafe(): Promise<StoredPayload[]> {
+    await ensureDataDir();
     try {
         const data = await readFile(EVENTS_FILE, 'utf-8');
         return JSON.parse(data);
-    } catch {
+    } catch (error: unknown) {
+        if (error instanceof SyntaxError) {
+            console.error('⚠️ events.json corrupted in geo route, resetting...');
+        }
         await writeFile(EVENTS_FILE, '[]');
         return [];
     }
 }
 
-async function getGeoCache(): Promise<GeoCache> {
+async function getGeoCacheUnsafe(): Promise<GeoCache> {
     try {
         const data = await readFile(GEO_CACHE_FILE, 'utf-8');
         return JSON.parse(data);
-    } catch {
+    } catch (error: unknown) {
+        if (error instanceof SyntaxError) {
+            console.error('⚠️ geo-cache.json corrupted, resetting...');
+        }
         return {};
     }
 }
 
-async function saveGeoCache(cache: GeoCache): Promise<void> {
+async function saveGeoCacheUnsafe(cache: GeoCache): Promise<void> {
     await writeFile(GEO_CACHE_FILE, JSON.stringify(cache, null, 2));
 }
 
@@ -86,9 +98,11 @@ async function lookupIP(ip: string, cache: GeoCache): Promise<GeoCache[string] |
                 cachedAt: new Date().toISOString()
             };
 
-            // Save to cache
+            // Save to cache with lock
             cache[ip] = geoData;
-            await saveGeoCache(cache);
+            await withFileLock(GEO_CACHE_LOCK, async () => {
+                await saveGeoCacheUnsafe(cache);
+            });
 
             return geoData;
         }
@@ -101,15 +115,19 @@ async function lookupIP(ip: string, cache: GeoCache): Promise<GeoCache[string] |
 
 export async function GET() {
     try {
-        const events = await getEvents();
-        const cache = await getGeoCache();
+        const events = await withFileLock(EVENTS_LOCK, async () => {
+            return await getEventsUnsafe();
+        });
+        const cache = await withFileLock(GEO_CACHE_LOCK, async () => {
+            return await getGeoCacheUnsafe();
+        });
 
         // Get unique attacker IPs from SSH events
         const attackerIPs = new Map<string, number>();
 
         events
-            .filter((e) => e.type === 'ssh_event' && e.data?.event_type === 'failed')
-            .forEach((e) => {
+            .filter((e: StoredPayload) => e.type === 'ssh_event' && e.data?.event_type === 'failed')
+            .forEach((e: StoredPayload) => {
                 const ip = e.data?.ip;
                 if (ip && typeof ip === 'string') {
                     attackerIPs.set(ip, (attackerIPs.get(ip) || 0) + 1);
