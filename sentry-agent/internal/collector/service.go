@@ -62,90 +62,172 @@ func (c *ServiceCollector) Start() {
 	}()
 }
 
-// collect gathers current service status
+// collect gathers current service status using batched systemctl calls
 func (c *ServiceCollector) collect() ServiceData {
 	services := []ServiceStatus{}
 
-	// Common services to monitor
-	commonServices := []string{
-		"nginx",
-		"apache2",
-		"httpd",
-		"mysql",
-		"mysqld",
-		"mariadb",
-		"postgresql",
-		"postgres",
-		"redis",
-		"redis-server",
-		"memcached",
-		"docker",
-		"php-fpm",
-		"php7.4-fpm",
-		"php8.0-fpm",
-		"php8.1-fpm",
-		"php8.2-fpm",
-		"php8.3-fpm",
-		"ssh",
-		"sshd",
-		"fail2ban",
-		"ufw",
-		"firewalld",
-		"cron",
-		"rsyslog",
-		"elasticsearch",
-		"kibana",
-		"logstash",
-		"mongodb",
-		"mongod",
-		"rabbitmq-server",
-		"supervisor",
-		"jenkins",
-		"gitlab-runner",
-	}
-
-	// Get all running services first
+	// Get all running services in a single call
 	runningServices := c.getRunningServices()
 
-	// Helper to check if service already added
-	added := make(map[string]bool)
-
-	// Check each common service
-	for _, svc := range commonServices {
-		status := c.getServiceStatus(svc)
-		if status != "unknown" {
-			// Get resources only if running
-			var cpu, mem float64
-			if status == "running" {
-				cpu, mem = c.getServiceResources(svc)
-			}
-
-			services = append(services, ServiceStatus{
-				Name:     svc,
-				Status:   status,
-				Active:   status == "running",
-				CPU:      cpu,
-				MemoryMB: mem,
-			})
-			added[svc] = true
-		}
+	// Build a map for quick lookup
+	runningMap := make(map[string]bool)
+	for _, svc := range runningServices {
+		runningMap[svc] = true
 	}
 
-	// Also add any running services not in common list
+	// Common services to check (even if not running)
+	commonServices := []string{
+		"nginx", "apache2", "httpd", "mysql", "mysqld", "mariadb",
+		"postgresql", "postgres", "redis", "redis-server", "memcached",
+		"docker", "php-fpm", "ssh", "sshd", "fail2ban", "ufw",
+		"firewalld", "cron", "rsyslog", "elasticsearch", "kibana",
+		"mongodb", "mongod", "rabbitmq-server", "supervisor",
+	}
+
+	added := make(map[string]bool)
+
+	// Get batch resource info for all running services (single ps call)
+	resourceMap := c.getBatchServiceResources(runningServices)
+
+	// Add common services with their status
+	for _, svc := range commonServices {
+		var status string
+		var cpu, mem float64
+
+		if runningMap[svc] {
+			status = "running"
+			if res, ok := resourceMap[svc]; ok {
+				cpu, mem = res.cpu, res.mem
+			}
+		} else {
+			// Quick check if service exists but isn't running
+			status = c.getServiceStatusQuick(svc)
+			if status == "unknown" {
+				continue // Skip services that don't exist
+			}
+		}
+
+		services = append(services, ServiceStatus{
+			Name:     svc,
+			Status:   status,
+			Active:   status == "running",
+			CPU:      cpu,
+			MemoryMB: mem,
+		})
+		added[svc] = true
+	}
+
+	// Add remaining running services not in common list
 	for _, svc := range runningServices {
 		if !added[svc] {
-			cpu, mem := c.getServiceResources(svc)
+			res := resourceMap[svc]
 			services = append(services, ServiceStatus{
 				Name:     svc,
 				Status:   "running",
 				Active:   true,
-				CPU:      cpu,
-				MemoryMB: mem,
+				CPU:      res.cpu,
+				MemoryMB: res.mem,
 			})
 		}
 	}
 
 	return ServiceData{Services: services}
+}
+
+type serviceResource struct {
+	cpu float64
+	mem float64
+}
+
+// getBatchServiceResources gets CPU and memory for all services in a single ps call
+func (c *ServiceCollector) getBatchServiceResources(services []string) map[string]serviceResource {
+	result := make(map[string]serviceResource)
+
+	if len(services) == 0 {
+		return result
+	}
+
+	// Get all service PIDs in a single systemctl call
+	cmd := exec.Command("systemctl", "show", "--property=MainPID,Id")
+	cmd.Args = append(cmd.Args, services...)
+
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	if err := cmd.Run(); err != nil {
+		return result
+	}
+
+	// Parse output to build PID -> service name map
+	pidToService := make(map[string]string)
+	var pids []string
+
+	output := out.String()
+	blocks := strings.Split(output, "\n\n")
+
+	for i, block := range blocks {
+		if i >= len(services) {
+			break
+		}
+		lines := strings.Split(strings.TrimSpace(block), "\n")
+		for _, line := range lines {
+			if strings.HasPrefix(line, "MainPID=") {
+				pid := strings.TrimPrefix(line, "MainPID=")
+				if pid != "" && pid != "0" {
+					pidToService[pid] = services[i]
+					pids = append(pids, pid)
+				}
+			}
+		}
+	}
+
+	if len(pids) == 0 {
+		return result
+	}
+
+	// Get all process stats in a single ps call
+	psCmd := exec.Command("ps", "-p", strings.Join(pids, ","), "-o", "pid,%cpu,rss", "--no-headers")
+	var psOut bytes.Buffer
+	psCmd.Stdout = &psOut
+	if err := psCmd.Run(); err != nil {
+		return result
+	}
+
+	// Parse ps output
+	lines := strings.Split(strings.TrimSpace(psOut.String()), "\n")
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		if len(fields) >= 3 {
+			pid := fields[0]
+			if svcName, ok := pidToService[pid]; ok {
+				var cpu, memKB float64
+				fmt.Sscanf(fields[1], "%f", &cpu)
+				fmt.Sscanf(fields[2], "%f", &memKB)
+				result[svcName] = serviceResource{cpu: cpu, mem: memKB / 1024.0}
+			}
+		}
+	}
+
+	return result
+}
+
+// getServiceStatusQuick checks service status without resource info
+func (c *ServiceCollector) getServiceStatusQuick(name string) string {
+	cmd := exec.Command("systemctl", "is-active", name)
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Run()
+
+	status := strings.TrimSpace(out.String())
+	switch status {
+	case "active":
+		return "running"
+	case "inactive":
+		return "stopped"
+	case "failed":
+		return "failed"
+	default:
+		return "unknown"
+	}
 }
 
 // getServiceResources attempts to get CPU and Memory usage for a service

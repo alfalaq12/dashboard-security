@@ -29,12 +29,12 @@ func Load() *Config {
 		APIKey:    getEnv("SENTRY_API_KEY", ""),
 		NodeName:  getEnv("SENTRY_NODE_NAME", getHostname()),
 		LogPath:   getEnv("SENTRY_LOG_PATH", "/var/log/auth.log"),
-		Interval:  10, // default 10 seconds
+		Interval:  30, // default 30 seconds (was 10, reduced for lower CPU usage)
 
 		// Threat scanning defaults
 		ScanPaths:        getEnvList("SENTRY_SCAN_PATHS", []string{"/var/www/html"}),
 		ScanExclude:      getEnvList("SENTRY_SCAN_EXCLUDE", []string{"node_modules", "vendor", ".git"}),
-		ThreatInterval:   getEnvInt("SENTRY_THREAT_INTERVAL", 60),
+		ThreatInterval:   getEnvInt("SENTRY_THREAT_INTERVAL", 120), // 120 seconds (was 60)
 		CPUThreshold:     getEnvFloat("SENTRY_CPU_THRESHOLD", 90.0),
 		EnableThreatScan: getEnvBool("SENTRY_ENABLE_THREAT_SCAN", true),
 	}

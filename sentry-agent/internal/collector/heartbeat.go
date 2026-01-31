@@ -65,8 +65,9 @@ func (c *HeartbeatCollector) collect() HeartbeatData {
 		OS:       runtime.GOOS,
 	}
 
-	// Get CPU usage (average over 1 second)
-	cpuPercent, err := cpu.Percent(time.Second, false)
+	// Get CPU usage (non-blocking, uses cached value from OS)
+	// Note: First call may return 0, subsequent calls return valid percentage
+	cpuPercent, err := cpu.Percent(0, false)
 	if err == nil && len(cpuPercent) > 0 {
 		data.CPUPercent = cpuPercent[0]
 	}

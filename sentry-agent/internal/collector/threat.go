@@ -36,13 +36,15 @@ type ThreatFinding struct {
 
 // ThreatCollector monitors for backdoors and crypto miners
 type ThreatCollector struct {
-	scanPaths    []string
-	excludePaths []string
-	interval     int
-	cpuThreshold float64
-	findings     chan ThreatFinding
-	stopChan     chan struct{}
-	seenThreats  map[string]bool // track already reported threats
+	scanPaths     []string
+	excludePaths  []string
+	interval      int
+	cpuThreshold  float64
+	findings      chan ThreatFinding
+	stopChan      chan struct{}
+	seenThreats   map[string]bool      // track already reported threats
+	lastScanTime  map[string]time.Time // track last scan time per file for incremental scanning
+	fullScanCount int                  // counter for periodic full scan
 }
 
 // Known miner process names
@@ -104,13 +106,15 @@ var backdoorPatterns = []backdoorRule{
 // NewThreatCollector creates a new threat collector
 func NewThreatCollector(scanPaths, excludePaths []string, interval int, cpuThreshold float64) *ThreatCollector {
 	return &ThreatCollector{
-		scanPaths:    scanPaths,
-		excludePaths: excludePaths,
-		interval:     interval,
-		cpuThreshold: cpuThreshold,
-		findings:     make(chan ThreatFinding, 100),
-		stopChan:     make(chan struct{}),
-		seenThreats:  make(map[string]bool),
+		scanPaths:     scanPaths,
+		excludePaths:  excludePaths,
+		interval:      interval,
+		cpuThreshold:  cpuThreshold,
+		findings:      make(chan ThreatFinding, 100),
+		stopChan:      make(chan struct{}),
+		seenThreats:   make(map[string]bool),
+		lastScanTime:  make(map[string]time.Time),
+		fullScanCount: 0,
 	}
 }
 
@@ -147,26 +151,37 @@ func (tc *ThreatCollector) run() {
 }
 
 func (tc *ThreatCollector) scanAll() {
+	// Increment scan counter
+	tc.fullScanCount++
+
+	// Do full file scan every 10 intervals, otherwise incremental
+	fullScan := tc.fullScanCount%10 == 1
+
 	// Scan for backdoors in configured paths
 	for _, scanPath := range tc.scanPaths {
-		tc.scanDirectory(scanPath)
+		tc.scanDirectory(scanPath, fullScan)
 	}
 
-	// Scan for mining processes
+	// Scan for mining processes (always do this, it's quick)
 	tc.scanProcesses()
 
-	// Scan for mining network connections
+	// Scan for mining network connections (always do this, it's quick)
 	tc.scanNetworkConnections()
 
-	// Scan crontab for persistence
-	tc.scanCrontab()
+	// Scan crontab for persistence (only on full scan)
+	if fullScan {
+		tc.scanCrontab()
+	}
 }
 
-func (tc *ThreatCollector) scanDirectory(rootPath string) {
+func (tc *ThreatCollector) scanDirectory(rootPath string, fullScan bool) {
 	// Check if path exists
 	if _, err := os.Stat(rootPath); os.IsNotExist(err) {
 		return
 	}
+
+	var filesScanned int
+	var filesSkipped int
 
 	err := filepath.WalkDir(rootPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -193,12 +208,33 @@ func (tc *ThreatCollector) scanDirectory(rootPath string) {
 			return nil
 		}
 
+		// Incremental scanning: skip files not modified since last scan
+		if !fullScan {
+			info, err := d.Info()
+			if err == nil {
+				if lastScan, exists := tc.lastScanTime[path]; exists {
+					if info.ModTime().Before(lastScan) {
+						filesSkipped++
+						return nil // File not modified, skip
+					}
+				}
+			}
+		}
+
 		tc.scanFile(path)
+		tc.lastScanTime[path] = time.Now()
+		filesScanned++
 		return nil
 	})
 
 	if err != nil {
 		log.Printf("Error scanning directory %s: %v", rootPath, err)
+	}
+
+	if filesScanned > 0 || filesSkipped > 0 {
+		log.Printf("📁 Threat scan: %s (scanned: %d, skipped: %d, mode: %s)",
+			rootPath, filesScanned, filesSkipped,
+			map[bool]string{true: "full", false: "incremental"}[fullScan])
 	}
 }
 
