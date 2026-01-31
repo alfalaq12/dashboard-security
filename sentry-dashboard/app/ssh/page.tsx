@@ -5,9 +5,11 @@ import dynamic from 'next/dynamic';
 import Swal from 'sweetalert2';
 import CredentialModal from './components/CredentialModal';
 import FileManager from './components/FileManager';
+import RemoteAgentsList from './components/RemoteAgentsList';
 
 // Dynamic import for Terminal (SSR disabled)
 const Terminal = dynamic(() => import('./components/Terminal'), { ssr: false });
+const RemoteTerminal = dynamic(() => import('./components/RemoteTerminal'), { ssr: false });
 
 interface Credential {
     id: number;
@@ -69,6 +71,10 @@ export default function SSHConsolePage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCredential, setEditingCredential] = useState<Credential | null>(null);
     const [isLoadingCredentials, setIsLoadingCredentials] = useState(true);
+
+    // Remote agent state
+    const [selectedAgent, setSelectedAgent] = useState<{ id: string; nodeName: string } | null>(null);
+    const [connectionMode, setConnectionMode] = useState<'ssh' | 'agent'>('ssh');
 
     // Fetch credentials
     const loadCredentials = useCallback(async () => {
@@ -316,7 +322,11 @@ export default function SSHConsolePage() {
                             credentials.map(credential => (
                                 <div
                                     key={credential.id}
-                                    onClick={() => setSelectedCredential(credential)}
+                                    onClick={() => {
+                                        setSelectedCredential(credential);
+                                        setSelectedAgent(null);
+                                        setConnectionMode('ssh');
+                                    }}
                                     style={{
                                         padding: '12px',
                                         background: selectedCredential?.id === credential.id
@@ -379,6 +389,16 @@ export default function SSHConsolePage() {
                             ))
                         )}
                     </div>
+
+                    {/* Remote Agents section */}
+                    <RemoteAgentsList
+                        selectedAgentId={selectedAgent?.id || null}
+                        onSelectAgent={(id, nodeName) => {
+                            setSelectedAgent({ id, nodeName });
+                            setSelectedCredential(null);
+                            setConnectionMode('agent');
+                        }}
+                    />
                 </div>
 
                 {/* Main Panel */}
@@ -390,7 +410,7 @@ export default function SSHConsolePage() {
                     display: 'flex',
                     flexDirection: 'column',
                 }}>
-                    {!selectedCredential ? (
+                    {!selectedCredential && !selectedAgent ? (
                         <div style={{
                             flex: 1,
                             display: 'flex',
@@ -401,16 +421,22 @@ export default function SSHConsolePage() {
                             color: '#606078',
                         }}>
                             <TerminalIcon />
-                            <p>Select a credential from the sidebar to connect</p>
+                            <p>Select a credential or remote agent to connect</p>
                         </div>
-                    ) : activeTab === 'terminal' ? (
+                    ) : connectionMode === 'agent' && selectedAgent ? (
+                        <RemoteTerminal
+                            agentId={selectedAgent.id}
+                            nodeName={selectedAgent.nodeName}
+                            onDisconnect={() => setSelectedAgent(null)}
+                        />
+                    ) : selectedCredential && activeTab === 'terminal' ? (
                         <Terminal
                             credentialId={selectedCredential.id}
                             onDisconnect={() => { }}
                         />
-                    ) : (
+                    ) : selectedCredential ? (
                         <FileManager credentialId={selectedCredential.id} />
-                    )}
+                    ) : null}
                 </div>
             </div>
 

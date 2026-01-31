@@ -20,6 +20,10 @@ type Config struct {
 	ThreatInterval   int      // Interval in seconds for threat scanning
 	CPUThreshold     float64  // CPU threshold for mining detection (default 90%)
 	EnableThreatScan bool     // Enable threat scanning
+
+	// Remote terminal config
+	EnableRemoteTerminal bool   // Enable remote terminal feature
+	RemoteGatewayURL     string // WebSocket URL for remote terminal (ws://dashboard:3004/agent)
 }
 
 // Load reads configuration from environment variables
@@ -37,6 +41,10 @@ func Load() *Config {
 		ThreatInterval:   getEnvInt("SENTRY_THREAT_INTERVAL", 120), // 120 seconds (was 60)
 		CPUThreshold:     getEnvFloat("SENTRY_CPU_THRESHOLD", 90.0),
 		EnableThreatScan: getEnvBool("SENTRY_ENABLE_THREAT_SCAN", true),
+
+		// Remote terminal defaults
+		EnableRemoteTerminal: getEnvBool("SENTRY_ENABLE_REMOTE_TERMINAL", false),
+		RemoteGatewayURL:     getEnv("SENTRY_REMOTE_GATEWAY_URL", "ws://localhost:3004/agent"),
 	}
 	return cfg
 }

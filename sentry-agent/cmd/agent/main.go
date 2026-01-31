@@ -8,6 +8,7 @@ import (
 
 	"github.com/bintang/sentry-agent/internal/collector"
 	"github.com/bintang/sentry-agent/internal/config"
+	"github.com/bintang/sentry-agent/internal/remote"
 	"github.com/bintang/sentry-agent/internal/sender"
 )
 
@@ -129,10 +130,25 @@ func main() {
 		log.Println("⚠️  Threat scanning disabled (set SENTRY_ENABLE_THREAT_SCAN=true to enable)")
 	}
 
+	// Initialize Remote Terminal tunnel
+	var tunnel *remote.Tunnel
+	if cfg.EnableRemoteTerminal {
+		tunnel = remote.NewTunnel(cfg.RemoteGatewayURL, cfg.NodeName, cfg.APIKey)
+		tunnel.Start()
+		log.Printf("🔌 Remote terminal enabled (gateway: %s)", cfg.RemoteGatewayURL)
+	} else {
+		log.Println("⚠️  Remote terminal disabled (set SENTRY_ENABLE_REMOTE_TERMINAL=true to enable)")
+	}
+
 	// Wait for shutdown signal
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	<-sigChan
 
 	log.Println("🛑 Sentry Agent shutting down...")
+
+	// Cleanup
+	if tunnel != nil {
+		tunnel.Stop()
+	}
 }
