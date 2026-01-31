@@ -5,11 +5,12 @@
 
 import { NextResponse } from 'next/server';
 
-const AGENT_GATEWAY_URL = process.env.AGENT_GATEWAY_URL || 'http://localhost:3004';
+// Gateway runs on port 3004 (unified SSH + Agent gateway)
+const GATEWAY_URL = process.env.AGENT_GATEWAY_URL || `http://localhost:${process.env.SSH_GATEWAY_PORT || 3004}`;
 
 export async function GET() {
     try {
-        const response = await fetch(`${AGENT_GATEWAY_URL}/agents`, {
+        const response = await fetch(`${GATEWAY_URL}/agents`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',

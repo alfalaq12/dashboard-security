@@ -1,7 +1,12 @@
 /**
- * SSH Gateway Server
- * WebSocket server for SSH terminal streaming
- * Runs on a separate port from Next.js
+ * Unified Gateway Server
+ * WebSocket server for both SSH terminal streaming and Remote Agent connections
+ * Runs on port 3004 (separate from Next.js on 3000)
+ * 
+ * Endpoints:
+ * - / (default): SSH terminal via credentials
+ * - /agent: Agent registration endpoint
+ * - /terminal: User terminal to connected agent
  */
 
 import { WebSocketServer, WebSocket } from 'ws';
@@ -10,8 +15,11 @@ import { createServer } from 'http';
 import { decrypt } from '../lib/crypto';
 import { getDatabase } from '../lib/db';
 
-const SSH_GATEWAY_PORT = parseInt(process.env.SSH_GATEWAY_PORT || '3001');
+const GATEWAY_PORT = parseInt(process.env.SSH_GATEWAY_PORT || '3004');
 
+// =====================================
+// SSH Terminal Session Types
+// =====================================
 interface SSHSession {
     ws: WebSocket;
     ssh: Client;
@@ -19,29 +27,117 @@ interface SSHSession {
     credentialId: number;
 }
 
-const sessions = new Map<string, SSHSession>();
+const sshSessions = new Map<string, SSHSession>();
 
-// Create HTTP server for WebSocket upgrade
+// =====================================
+// Remote Agent Types
+// =====================================
+const MsgType = {
+    Register: 'register',
+    Registered: 'registered',
+    StartShell: 'start_shell',
+    Data: 'data',
+    Resize: 'resize',
+    CloseShell: 'close_shell',
+    Error: 'error',
+    Ping: 'ping',
+    Pong: 'pong',
+} as const;
+
+interface AgentConnection {
+    ws: WebSocket;
+    nodeName: string;
+    connectedAt: Date;
+    apiKey: string;
+    activeSessions: Set<string>;
+}
+
+interface UserSession {
+    ws: WebSocket;
+    agentId: string;
+    sessionId: string;
+}
+
+const agents = new Map<string, AgentConnection>();
+const userSessions = new Map<string, UserSession>();
+
+// =====================================
+// HTTP Server
+// =====================================
 const server = createServer((req, res) => {
-    // Health check endpoint
-    if (req.url === '/health') {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ status: 'ok', activeSessions: sessions.size }));
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') {
+        res.writeHead(200);
+        res.end();
         return;
     }
+
+    if (req.url === '/health') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            status: 'ok',
+            sshSessions: sshSessions.size,
+            connectedAgents: agents.size,
+            agentSessions: userSessions.size
+        }));
+        return;
+    }
+
+    if (req.url === '/agents') {
+        const agentList = Array.from(agents.entries()).map(([id, agent]) => ({
+            id,
+            nodeName: agent.nodeName,
+            connectedAt: agent.connectedAt.toISOString(),
+            activeSessions: agent.activeSessions.size,
+            online: agent.ws.readyState === WebSocket.OPEN
+        }));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(agentList));
+        return;
+    }
+
     res.writeHead(404);
     res.end('Not found');
 });
 
-// Create WebSocket server
+// =====================================
+// WebSocket Server with Path Routing
+// =====================================
 const wss = new WebSocketServer({ server });
 
-wss.on('connection', async (ws: WebSocket, req) => {
+wss.on('connection', (ws: WebSocket, req) => {
+    const url = new URL(req.url || '/', `http://${req.headers.host}`);
+    const path = url.pathname;
+
+    if (path === '/agent') {
+        // Agent registration
+        const nodeName = req.headers['x-node-name'] as string || '';
+        const apiKey = req.headers['x-api-key'] as string || '';
+        handleAgentConnection(ws, nodeName, apiKey);
+    } else if (path === '/terminal') {
+        // User terminal to agent
+        const agentId = url.searchParams.get('agentId');
+        if (!agentId) {
+            ws.send(JSON.stringify({ type: MsgType.Error, error: 'Missing agentId' }));
+            ws.close();
+            return;
+        }
+        handleUserTerminalConnection(ws, agentId);
+    } else {
+        // Default: SSH terminal via credentials
+        handleSSHConnection(ws);
+    }
+});
+
+// =====================================
+// SSH Terminal Handlers
+// =====================================
+function handleSSHConnection(ws: WebSocket) {
     const sessionId = crypto.randomUUID();
     console.log(`🔌 New SSH WebSocket connection: ${sessionId}`);
-
-    let sshClient: Client | null = null;
-    let stream: ClientChannel | null = null;
 
     ws.on('message', async (message: Buffer) => {
         try {
@@ -49,50 +145,42 @@ wss.on('connection', async (ws: WebSocket, req) => {
 
             switch (data.type) {
                 case 'connect':
-                    await handleConnect(ws, data, sessionId);
+                    await handleSSHConnect(ws, data, sessionId);
                     break;
-
                 case 'data':
-                    // Send data to SSH stream
-                    const session = sessions.get(sessionId);
+                    const session = sshSessions.get(sessionId);
                     if (session?.stream) {
                         session.stream.write(data.data);
                     }
                     break;
-
                 case 'resize':
-                    // Handle terminal resize
-                    const resizeSession = sessions.get(sessionId);
+                    const resizeSession = sshSessions.get(sessionId);
                     if (resizeSession?.stream) {
                         resizeSession.stream.setWindow(data.rows, data.cols, data.height || 480, data.width || 640);
                     }
                     break;
-
                 case 'disconnect':
-                    await handleDisconnect(sessionId);
+                    handleSSHDisconnect(sessionId);
                     break;
             }
         } catch (error) {
-            console.error('Error handling message:', error);
-            ws.send(JSON.stringify({
-                type: 'error',
-                message: error instanceof Error ? error.message : 'Unknown error'
-            }));
+            console.error('Error handling SSH message:', error);
+            ws.send(JSON.stringify({ type: 'error', message: error instanceof Error ? error.message : 'Unknown error' }));
         }
     });
 
     ws.on('close', () => {
         console.log(`🔌 SSH WebSocket closed: ${sessionId}`);
-        handleDisconnect(sessionId);
+        handleSSHDisconnect(sessionId);
     });
 
     ws.on('error', (error) => {
-        console.error(`WebSocket error for session ${sessionId}:`, error);
-        handleDisconnect(sessionId);
+        console.error(`SSH WebSocket error for session ${sessionId}:`, error);
+        handleSSHDisconnect(sessionId);
     });
-});
+}
 
-async function handleConnect(ws: WebSocket, data: { credentialId: number; cols?: number; rows?: number }, sessionId: string) {
+async function handleSSHConnect(ws: WebSocket, data: { credentialId: number; cols?: number; rows?: number }, sessionId: string) {
     try {
         const db = await getDatabase();
         const credential = await db.getSSHCredentialById(data.credentialId);
@@ -117,18 +205,9 @@ async function handleConnect(ws: WebSocket, data: { credentialId: number; cols?:
                     return;
                 }
 
-                // Store session
-                sessions.set(sessionId, {
-                    ws,
-                    ssh: sshClient,
-                    stream,
-                    credentialId: data.credentialId
-                });
-
-                // Send connected message
+                sshSessions.set(sessionId, { ws, ssh: sshClient, stream, credentialId: data.credentialId });
                 ws.send(JSON.stringify({ type: 'connected', sessionId }));
 
-                // Stream SSH output to WebSocket
                 stream.on('data', (chunk: Buffer) => {
                     if (ws.readyState === WebSocket.OPEN) {
                         ws.send(JSON.stringify({ type: 'data', data: chunk.toString('utf8') }));
@@ -144,7 +223,7 @@ async function handleConnect(ws: WebSocket, data: { credentialId: number; cols?:
                 stream.on('close', () => {
                     console.log(`📴 SSH stream closed for session ${sessionId}`);
                     ws.send(JSON.stringify({ type: 'disconnected' }));
-                    handleDisconnect(sessionId);
+                    handleSSHDisconnect(sessionId);
                 });
             });
         });
@@ -161,7 +240,6 @@ async function handleConnect(ws: WebSocket, data: { credentialId: number; cols?:
             }
         });
 
-        // Prepare connection config
         const connectConfig: any = {
             host: credential.host,
             port: credential.port,
@@ -169,7 +247,6 @@ async function handleConnect(ws: WebSocket, data: { credentialId: number; cols?:
             readyTimeout: 30000,
         };
 
-        // Set authentication method
         if (credential.authType === 'password' && credential.encryptedPassword) {
             connectConfig.password = decrypt(credential.encryptedPassword);
         } else if (credential.authType === 'privatekey' && credential.encryptedPrivateKey) {
@@ -179,48 +256,166 @@ async function handleConnect(ws: WebSocket, data: { credentialId: number; cols?:
             }
         }
 
-        // Connect to SSH server
         sshClient.connect(connectConfig);
-
     } catch (error) {
-        console.error('Connect error:', error);
-        ws.send(JSON.stringify({
-            type: 'error',
-            message: error instanceof Error ? error.message : 'Connection failed'
-        }));
+        console.error('SSH Connect error:', error);
+        ws.send(JSON.stringify({ type: 'error', message: error instanceof Error ? error.message : 'Connection failed' }));
     }
 }
 
-async function handleDisconnect(sessionId: string) {
-    const session = sessions.get(sessionId);
+function handleSSHDisconnect(sessionId: string) {
+    const session = sshSessions.get(sessionId);
     if (session) {
         try {
-            if (session.stream) {
-                session.stream.end();
-            }
+            if (session.stream) session.stream.end();
             session.ssh.end();
         } catch (error) {
             console.error('Error closing SSH session:', error);
         }
-        sessions.delete(sessionId);
+        sshSessions.delete(sessionId);
     }
 }
 
-// Start the server
-server.listen(SSH_GATEWAY_PORT, () => {
-    console.log(`🚀 SSH Gateway server running on port ${SSH_GATEWAY_PORT}`);
-    console.log(`   WebSocket: ws://localhost:${SSH_GATEWAY_PORT}`);
-    console.log(`   Health: http://localhost:${SSH_GATEWAY_PORT}/health`);
+// =====================================
+// Remote Agent Handlers
+// =====================================
+function handleAgentConnection(ws: WebSocket, nodeName: string, apiKey: string) {
+    let agentId = '';
+    console.log(`🔌 Agent connection attempt from: ${nodeName}`);
+
+    ws.on('message', (message: Buffer) => {
+        try {
+            const msg = JSON.parse(message.toString());
+
+            switch (msg.type) {
+                case MsgType.Register:
+                    agentId = `agent-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                    agents.set(agentId, {
+                        ws,
+                        nodeName: msg.nodeName || nodeName,
+                        connectedAt: new Date(),
+                        apiKey,
+                        activeSessions: new Set()
+                    });
+                    console.log(`✅ Agent registered: ${msg.nodeName || nodeName} (${agentId})`);
+                    ws.send(JSON.stringify({ type: MsgType.Registered, agentId }));
+                    break;
+
+                case MsgType.Data:
+                case MsgType.CloseShell:
+                case MsgType.Error:
+                    const session = userSessions.get(msg.sessionId);
+                    if (session && session.ws.readyState === WebSocket.OPEN) {
+                        session.ws.send(JSON.stringify(msg));
+                    }
+                    if (msg.type === MsgType.CloseShell) {
+                        userSessions.delete(msg.sessionId);
+                        const agent = agents.get(session?.agentId || '');
+                        if (agent) agent.activeSessions.delete(msg.sessionId);
+                    }
+                    break;
+
+                case MsgType.Pong:
+                    break;
+            }
+        } catch (error) {
+            console.error('Error parsing agent message:', error);
+        }
+    });
+
+    ws.on('close', () => {
+        if (agentId) {
+            console.log(`📴 Agent disconnected: ${agentId}`);
+            const agent = agents.get(agentId);
+            if (agent) {
+                for (const sessionId of agent.activeSessions) {
+                    const session = userSessions.get(sessionId);
+                    if (session && session.ws.readyState === WebSocket.OPEN) {
+                        session.ws.send(JSON.stringify({ type: MsgType.CloseShell, sessionId }));
+                        session.ws.close();
+                    }
+                    userSessions.delete(sessionId);
+                }
+            }
+            agents.delete(agentId);
+        }
+    });
+
+    ws.on('error', (error) => {
+        console.error(`Agent WebSocket error (${agentId}):`, error);
+    });
+
+    const pingInterval = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: MsgType.Ping }));
+        } else {
+            clearInterval(pingInterval);
+        }
+    }, 30000);
+}
+
+function handleUserTerminalConnection(ws: WebSocket, agentId: string) {
+    const agent = agents.get(agentId);
+
+    if (!agent || agent.ws.readyState !== WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: MsgType.Error, error: 'Agent not connected' }));
+        ws.close();
+        return;
+    }
+
+    const sessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    console.log(`🖥️ User terminal session started: ${sessionId} -> ${agent.nodeName}`);
+
+    userSessions.set(sessionId, { ws, agentId, sessionId });
+    agent.activeSessions.add(sessionId);
+
+    ws.send(JSON.stringify({ type: 'connected', sessionId, nodeName: agent.nodeName }));
+    agent.ws.send(JSON.stringify({ type: MsgType.StartShell, sessionId, cols: 80, rows: 24 }));
+
+    ws.on('message', (message: Buffer) => {
+        try {
+            const msg = JSON.parse(message.toString());
+            if (agent.ws.readyState === WebSocket.OPEN) {
+                agent.ws.send(JSON.stringify({ ...msg, sessionId }));
+            }
+        } catch (error) {
+            console.error('Error parsing user message:', error);
+        }
+    });
+
+    ws.on('close', () => {
+        console.log(`📴 User terminal session closed: ${sessionId}`);
+        if (agent.ws.readyState === WebSocket.OPEN) {
+            agent.ws.send(JSON.stringify({ type: MsgType.CloseShell, sessionId }));
+        }
+        userSessions.delete(sessionId);
+        agent.activeSessions.delete(sessionId);
+    });
+
+    ws.on('error', (error) => {
+        console.error(`User terminal WebSocket error (${sessionId}):`, error);
+    });
+}
+
+// =====================================
+// Server Startup
+// =====================================
+server.listen(GATEWAY_PORT, () => {
+    console.log(`🚀 Unified Gateway server running on port ${GATEWAY_PORT}`);
+    console.log(`   SSH Terminal: ws://localhost:${GATEWAY_PORT}/`);
+    console.log(`   Agent Registration: ws://localhost:${GATEWAY_PORT}/agent`);
+    console.log(`   User Terminal: ws://localhost:${GATEWAY_PORT}/terminal?agentId=xxx`);
+    console.log(`   Health: http://localhost:${GATEWAY_PORT}/health`);
+    console.log(`   Agents List: http://localhost:${GATEWAY_PORT}/agents`);
 });
 
-// Graceful shutdown
 process.on('SIGTERM', () => {
-    console.log('Shutting down SSH Gateway...');
-    sessions.forEach((session, id) => {
-        handleDisconnect(id);
-    });
+    console.log('Shutting down Gateway...');
+    sshSessions.forEach((_, id) => handleSSHDisconnect(id));
+    agents.forEach((agent) => agent.ws.close());
+    userSessions.forEach((session) => session.ws.close());
     server.close();
     process.exit(0);
 });
 
-export { server, wss };
+export { server, wss, agents };

@@ -23,9 +23,14 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
-# Build-time argument for SSH Gateway port
+# Build-time argument for SSH Gateway port (port 3004 - shared with agent gateway)
 ARG NEXT_PUBLIC_SSH_GATEWAY_PORT=3004
 ENV NEXT_PUBLIC_SSH_GATEWAY_PORT=$NEXT_PUBLIC_SSH_GATEWAY_PORT
+
+# Build-time argument for Agent Gateway (remote terminal)
+ARG AGENT_GATEWAY_PORT=3004
+ARG NEXT_PUBLIC_AGENT_GATEWAY_WS_URL=ws://localhost:3004
+ENV NEXT_PUBLIC_AGENT_GATEWAY_WS_URL=$NEXT_PUBLIC_AGENT_GATEWAY_WS_URL
 
 # Build Next.js
 RUN npm run build
@@ -43,6 +48,7 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3002
 ENV HOSTNAME="0.0.0.0"
+ENV AGENT_GATEWAY_PORT=3004
 
 # Copy package files
 COPY --from=builder /app/package.json ./package.json
@@ -56,7 +62,7 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/server.js ./server.js
 
-# Copy compiled SSH Gateway (JavaScript)
+# Copy compiled SSH Gateway and Agent Gateway (JavaScript)
 COPY --from=builder /app/dist-server ./dist-server
 
 # Create data directory
