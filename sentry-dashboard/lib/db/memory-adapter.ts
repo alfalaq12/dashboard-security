@@ -4,8 +4,9 @@
  * Data hilang saat server restart
  */
 
-import { DatabaseAdapter, User, UserCreate, UserUpdate } from './types';
+import { DatabaseAdapter, User, UserCreate, UserUpdate, SSHCredential, SSHCredentialCreate, SSHCredentialUpdate } from './types';
 import bcrypt from 'bcryptjs';
+import { encrypt } from '../crypto';
 
 // data user default
 const defaultUsers: User[] = [
@@ -40,17 +41,22 @@ const defaultUsers: User[] = [
 
 export class MemoryAdapter implements DatabaseAdapter {
     private users: User[] = [];
-    private nextId: number = 1;
+    private sshCredentials: SSHCredential[] = [];
+    private nextUserId: number = 1;
+    private nextSSHCredentialId: number = 1;
 
     async connect(): Promise<void> {
         // inisialisasi dengan user default
         this.users = [...defaultUsers];
-        this.nextId = this.users.length + 1;
+        this.nextUserId = this.users.length + 1;
+        this.sshCredentials = [];
+        this.nextSSHCredentialId = 1;
         console.log('📦 Memory database connected');
     }
 
     async disconnect(): Promise<void> {
         this.users = [];
+        this.sshCredentials = [];
         console.log('📦 Memory database disconnected');
     }
 
@@ -69,7 +75,7 @@ export class MemoryAdapter implements DatabaseAdapter {
     async createUser(data: UserCreate): Promise<User> {
         const hashedPassword = await this.hashPassword(data.password);
         const newUser: User = {
-            id: this.nextId++,
+            id: this.nextUserId++,
             ...data,
             password: hashedPassword,
             createdAt: new Date(),
@@ -111,4 +117,72 @@ export class MemoryAdapter implements DatabaseAdapter {
     async hashPassword(password: string): Promise<string> {
         return bcrypt.hash(password, 10);
     }
+
+    // SSH Credential Methods
+    async createSSHCredential(data: SSHCredentialCreate): Promise<SSHCredential> {
+        const credential: SSHCredential = {
+            id: this.nextSSHCredentialId++,
+            nodeId: data.nodeId,
+            name: data.name,
+            host: data.host,
+            port: data.port || 22,
+            username: data.username,
+            authType: data.authType,
+            encryptedPassword: data.password ? encrypt(data.password) : undefined,
+            encryptedPrivateKey: data.privateKey ? encrypt(data.privateKey) : undefined,
+            encryptedPassphrase: data.passphrase ? encrypt(data.passphrase) : undefined,
+            createdAt: new Date(),
+        };
+        this.sshCredentials.push(credential);
+        return credential;
+    }
+
+    async getSSHCredentialById(id: number): Promise<SSHCredential | null> {
+        return this.sshCredentials.find(c => c.id === id) || null;
+    }
+
+    async getSSHCredentialsByNode(nodeId: string): Promise<SSHCredential[]> {
+        return this.sshCredentials.filter(c => c.nodeId === nodeId);
+    }
+
+    async getAllSSHCredentials(): Promise<SSHCredential[]> {
+        // Return with masked credentials
+        return this.sshCredentials.map(c => ({
+            ...c,
+            encryptedPassword: c.encryptedPassword ? '***' : undefined,
+            encryptedPrivateKey: c.encryptedPrivateKey ? '***' : undefined,
+            encryptedPassphrase: c.encryptedPassphrase ? '***' : undefined,
+        }));
+    }
+
+    async updateSSHCredential(id: number, data: SSHCredentialUpdate): Promise<SSHCredential | null> {
+        const index = this.sshCredentials.findIndex(c => c.id === id);
+        if (index === -1) return null;
+
+        const updated: SSHCredential = {
+            ...this.sshCredentials[index],
+            ...data,
+            encryptedPassword: data.password ? encrypt(data.password) : this.sshCredentials[index].encryptedPassword,
+            encryptedPrivateKey: data.privateKey ? encrypt(data.privateKey) : this.sshCredentials[index].encryptedPrivateKey,
+            encryptedPassphrase: data.passphrase ? encrypt(data.passphrase) : this.sshCredentials[index].encryptedPassphrase,
+            updatedAt: new Date(),
+        };
+
+        // Remove plain text passwords from object
+        delete (updated as any).password;
+        delete (updated as any).privateKey;
+        delete (updated as any).passphrase;
+
+        this.sshCredentials[index] = updated;
+        return updated;
+    }
+
+    async deleteSSHCredential(id: number): Promise<boolean> {
+        const index = this.sshCredentials.findIndex(c => c.id === id);
+        if (index === -1) return false;
+
+        this.sshCredentials.splice(index, 1);
+        return true;
+    }
 }
+

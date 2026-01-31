@@ -31,6 +31,48 @@ export interface UserUpdate {
 }
 
 /*
+ * SSH Credential Interface
+ * Untuk menyimpan kredensial SSH yang terenkripsi
+ */
+export interface SSHCredential {
+    id: number;
+    nodeId: string;                    // Reference ke node yang terdaftar
+    name: string;                      // Display name untuk credential
+    host: string;                      // IP/hostname dari node
+    port: number;                      // SSH port (default 22)
+    username: string;                  // SSH username
+    authType: 'password' | 'privatekey';
+    encryptedPassword?: string;        // Encrypted password (jika authType = password)
+    encryptedPrivateKey?: string;      // Encrypted private key (jika authType = privatekey)
+    encryptedPassphrase?: string;      // Encrypted passphrase untuk private key
+    createdAt?: Date;
+    updatedAt?: Date;
+}
+
+export interface SSHCredentialCreate {
+    nodeId: string;
+    name: string;
+    host: string;
+    port?: number;
+    username: string;
+    authType: 'password' | 'privatekey';
+    password?: string;                 // Plain password (akan di-encrypt)
+    privateKey?: string;               // Plain private key (akan di-encrypt)
+    passphrase?: string;               // Plain passphrase (akan di-encrypt)
+}
+
+export interface SSHCredentialUpdate {
+    name?: string;
+    host?: string;
+    port?: number;
+    username?: string;
+    authType?: 'password' | 'privatekey';
+    password?: string;
+    privateKey?: string;
+    passphrase?: string;
+}
+
+/*
  * Interface DatabaseAdapter
  * Harus diimplementasikan oleh semua adapter database
  */
@@ -50,6 +92,14 @@ export interface DatabaseAdapter {
     // validasi password
     verifyPassword(plainPassword: string, hashedPassword: string): Promise<boolean>;
     hashPassword(password: string): Promise<string>;
+
+    // operasi SSH credential
+    createSSHCredential(data: SSHCredentialCreate): Promise<SSHCredential>;
+    getSSHCredentialById(id: number): Promise<SSHCredential | null>;
+    getSSHCredentialsByNode(nodeId: string): Promise<SSHCredential[]>;
+    getAllSSHCredentials(): Promise<SSHCredential[]>;
+    updateSSHCredential(id: number, data: SSHCredentialUpdate): Promise<SSHCredential | null>;
+    deleteSSHCredential(id: number): Promise<boolean>;
 }
 
 /*
@@ -70,3 +120,4 @@ export interface DatabaseConfig {
     filename?: string; // untuk SQLite
     connectionString?: string; // untuk MongoDB
 }
+

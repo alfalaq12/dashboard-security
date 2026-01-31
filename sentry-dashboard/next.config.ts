@@ -16,7 +16,8 @@ const nextConfig: NextConfig = {
     'better-sqlite3',
     'mysql2',
     'pg',
-    'bcryptjs'
+    'bcryptjs',
+    'ssh2'
   ],
 };
 
