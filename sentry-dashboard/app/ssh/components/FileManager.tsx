@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Swal from 'sweetalert2';
 
 interface FileInfo {
     name: string;
@@ -160,7 +161,21 @@ export default function FileManager({ credentialId }: FileManagerProps) {
 
     const handleDelete = async (file: FileInfo) => {
         if (!credentialId) return;
-        if (!confirm(`Delete ${file.name}?`)) return;
+
+        const result = await Swal.fire({
+            title: 'Delete File?',
+            html: `<p style="color: rgba(255,255,255,0.7)">Are you sure you want to delete <b>${file.name}</b>?</p>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Delete',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#ff4757',
+            cancelButtonColor: '#3a3a4a',
+            background: '#1a1a28',
+            color: '#e4e4e7',
+        });
+
+        if (!result.isConfirmed) return;
 
         try {
             const response = await fetch(
@@ -169,9 +184,24 @@ export default function FileManager({ credentialId }: FileManagerProps) {
             );
             const data = await response.json();
             if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Deleted!',
+                    text: `${file.name} has been deleted.`,
+                    timer: 1500,
+                    showConfirmButton: false,
+                    background: '#1a1a28',
+                    color: '#e4e4e7',
+                });
                 loadDirectory(currentPath);
             } else {
-                alert(data.error || 'Delete failed');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.error || 'Delete failed',
+                    background: '#1a1a28',
+                    color: '#e4e4e7',
+                });
             }
         } catch (err) {
             console.error('Delete error:', err);
@@ -194,9 +224,24 @@ export default function FileManager({ credentialId }: FileManagerProps) {
             );
             const data = await response.json();
             if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Uploaded!',
+                    text: `${file.name} uploaded successfully.`,
+                    timer: 1500,
+                    showConfirmButton: false,
+                    background: '#1a1a28',
+                    color: '#e4e4e7',
+                });
                 loadDirectory(currentPath);
             } else {
-                alert(data.error || 'Upload failed');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Upload Failed',
+                    text: data.error || 'Upload failed',
+                    background: '#1a1a28',
+                    color: '#e4e4e7',
+                });
             }
         } catch (err) {
             console.error('Upload error:', err);
@@ -208,7 +253,26 @@ export default function FileManager({ credentialId }: FileManagerProps) {
     const handleNewFolder = async () => {
         if (!credentialId) return;
 
-        const folderName = prompt('Enter folder name:');
+        const { value: folderName } = await Swal.fire({
+            title: 'Create New Folder',
+            input: 'text',
+            inputLabel: 'Folder Name',
+            inputPlaceholder: 'Enter folder name...',
+            showCancelButton: true,
+            confirmButtonText: 'Create',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#7c5cff',
+            cancelButtonColor: '#3a3a4a',
+            background: '#1a1a28',
+            color: '#e4e4e7',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Please enter a folder name';
+                }
+                return null;
+            },
+        });
+
         if (!folderName) return;
 
         const folderPath = currentPath === '/' ? `/${folderName}` : `${currentPath}/${folderName}`;
@@ -220,9 +284,24 @@ export default function FileManager({ credentialId }: FileManagerProps) {
             );
             const data = await response.json();
             if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Created!',
+                    text: `Folder "${folderName}" created.`,
+                    timer: 1500,
+                    showConfirmButton: false,
+                    background: '#1a1a28',
+                    color: '#e4e4e7',
+                });
                 loadDirectory(currentPath);
             } else {
-                alert(data.error || 'Failed to create folder');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.error || 'Failed to create folder',
+                    background: '#1a1a28',
+                    color: '#e4e4e7',
+                });
             }
         } catch (err) {
             console.error('Mkdir error:', err);
