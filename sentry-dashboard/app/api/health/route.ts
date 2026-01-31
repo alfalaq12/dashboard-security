@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { readFile, mkdir, writeFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
+import { withFileLock } from '@/lib/file-lock';
 
 interface NodePayload {
     id: string;
@@ -34,34 +35,48 @@ interface Notification {
 const DATA_DIR = path.join(process.cwd(), 'data');
 const EVENTS_FILE = path.join(DATA_DIR, 'events.json');
 const NOTIFICATIONS_FILE = path.join(DATA_DIR, 'notifications.json');
+const EVENTS_LOCK = 'events.json';
+const NOTIFICATIONS_LOCK = 'notifications.json';
 
-async function getEvents(): Promise<NodePayload[]> {
+async function ensureDataDir() {
     if (!existsSync(DATA_DIR)) {
         await mkdir(DATA_DIR, { recursive: true });
     }
+}
 
+async function getEventsUnsafe(): Promise<NodePayload[]> {
+    await ensureDataDir();
     try {
         const data = await readFile(EVENTS_FILE, 'utf-8');
         return JSON.parse(data);
-    } catch {
-        await writeFile(EVENTS_FILE, '[]');
+    } catch (error: unknown) {
+        if (error instanceof SyntaxError) {
+            console.error('⚠️ events.json corrupted in health route, resetting...');
+        }
+        // Don't write on error to prevent race conditions - just return empty
+        try {
+            await writeFile(EVENTS_FILE, '[]');
+        } catch { }
         return [];
     }
 }
 
-async function getNotifications(): Promise<Notification[]> {
+async function getNotificationsUnsafe(): Promise<Notification[]> {
     if (!existsSync(NOTIFICATIONS_FILE)) {
         return [];
     }
     try {
         const data = await readFile(NOTIFICATIONS_FILE, 'utf-8');
         return JSON.parse(data);
-    } catch {
+    } catch (error: unknown) {
+        if (error instanceof SyntaxError) {
+            console.error('⚠️ notifications.json corrupted in health route');
+        }
         return [];
     }
 }
 
-async function saveNotifications(notifications: Notification[]): Promise<void> {
+async function saveNotificationsUnsafe(notifications: Notification[]): Promise<void> {
     await writeFile(NOTIFICATIONS_FILE, JSON.stringify(notifications, null, 2));
 }
 
@@ -95,34 +110,36 @@ async function checkAndNotify(server: NodePayload, cpu: number, memory: number, 
     const message = `Server ${server.nodeName} is experiencing ${issue}. Please investigate immediately.`;
 
     try {
-        const notifications = await getNotifications();
+        await withFileLock(NOTIFICATIONS_LOCK, async () => {
+            const notifications = await getNotificationsUnsafe();
 
-        // Spam prevention: Check if unread notification exists for this server today
-        const hasUnread = notifications.some(n =>
-            !n.read &&
-            n.title === title &&
-            n.message.includes(issue) &&
-            new Date(n.timestamp).toDateString() === new Date().toDateString()
-        );
+            // Spam prevention: Check if unread notification exists for this server today
+            const hasUnread = notifications.some((n: Notification) =>
+                !n.read &&
+                n.title === title &&
+                n.message.includes(issue) &&
+                new Date(n.timestamp).toDateString() === new Date().toDateString()
+            );
 
-        if (!hasUnread) {
-            const newNotification: Notification = {
-                id: Date.now().toString(),
-                type: 'alert',
-                title,
-                message,
-                timestamp: new Date().toISOString(),
-                read: false,
-                source: 'System Health'
-            };
+            if (!hasUnread) {
+                const newNotification: Notification = {
+                    id: Date.now().toString(),
+                    type: 'alert',
+                    title,
+                    message,
+                    timestamp: new Date().toISOString(),
+                    read: false,
+                    source: 'System Health'
+                };
 
-            notifications.unshift(newNotification);
+                notifications.unshift(newNotification);
 
-            // Keep limit
-            if (notifications.length > 100) notifications.splice(100);
+                // Keep limit
+                if (notifications.length > 100) notifications.splice(100);
 
-            await saveNotifications(notifications);
-        }
+                await saveNotificationsUnsafe(notifications);
+            }
+        });
     } catch (error) {
         console.error('Failed to process notifications:', error);
     }
@@ -130,14 +147,16 @@ async function checkAndNotify(server: NodePayload, cpu: number, memory: number, 
 
 export async function GET() {
     try {
-        const events = await getEvents();
+        const events = await withFileLock(EVENTS_LOCK, async () => {
+            return await getEventsUnsafe();
+        });
 
         // Get latest heartbeat for each node
         const nodeHeartbeats = new Map<string, NodePayload>();
 
         events
-            .filter((e) => e.type === 'heartbeat')
-            .forEach((e) => {
+            .filter((e: NodePayload) => e.type === 'heartbeat')
+            .forEach((e: NodePayload) => {
                 const existing = nodeHeartbeats.get(e.nodeName);
                 if (!existing || new Date(e.timestamp) > new Date(existing.timestamp)) {
                     nodeHeartbeats.set(e.nodeName, e);
