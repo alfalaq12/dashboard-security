@@ -89,10 +89,11 @@ export default function SSHConsolePage() {
         try {
             const response = await fetch('/api/nodes');
             const data = await response.json();
-            if (data.success && data.nodes) {
+            // /api/nodes returns { nodes: [...], totalNodes, onlineNodes, ... }
+            if (data.nodes && Array.isArray(data.nodes)) {
                 setNodes(data.nodes.map((n: any) => ({
-                    nodeName: n.nodeName || n.name,
-                    hostname: n.hostname || n.nodeName || n.name,
+                    nodeName: n.nodeName || n.hostname,
+                    hostname: n.hostname || n.nodeName,
                     os: n.os || 'Unknown',
                     isOnline: n.isOnline ?? true,
                 })));
