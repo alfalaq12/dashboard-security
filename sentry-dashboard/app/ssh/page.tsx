@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
+import Swal from 'sweetalert2';
 import CredentialModal from './components/CredentialModal';
 import FileManager from './components/FileManager';
 
@@ -109,7 +110,26 @@ export default function SSHConsolePage() {
     }, [loadCredentials, loadNodes]);
 
     const handleDeleteCredential = async (id: number) => {
-        if (!confirm('Are you sure you want to delete this credential?')) return;
+        const result = await Swal.fire({
+            title: 'Delete Credential?',
+            text: 'This action cannot be undone. The credential will be permanently removed.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Delete',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#ff4757',
+            cancelButtonColor: '#3a3a4a',
+            background: '#1a1a28',
+            color: '#e4e4e7',
+            customClass: {
+                popup: 'swal-premium-popup',
+                title: 'swal-premium-title',
+                confirmButton: 'swal-premium-confirm',
+                cancelButton: 'swal-premium-cancel',
+            }
+        });
+
+        if (!result.isConfirmed) return;
 
         try {
             const response = await fetch(`/api/ssh/credentials?id=${id}`, { method: 'DELETE' });
@@ -119,9 +139,26 @@ export default function SSHConsolePage() {
                 if (selectedCredential?.id === id) {
                     setSelectedCredential(null);
                 }
+                // Success notification
+                Swal.fire({
+                    title: 'Deleted!',
+                    text: 'Credential has been removed.',
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false,
+                    background: '#1a1a28',
+                    color: '#e4e4e7',
+                });
             }
         } catch (err) {
             console.error('Failed to delete credential:', err);
+            Swal.fire({
+                title: 'Error!',
+                text: 'Failed to delete credential.',
+                icon: 'error',
+                background: '#1a1a28',
+                color: '#e4e4e7',
+            });
         }
     };
 

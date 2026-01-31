@@ -10,9 +10,14 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
+      - "3001:3001" # SSH Gateway WebSocket
     environment:
       - NODE_ENV=production
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key}
+      # SSH Remote Feature
+      - SSH_GATEWAY_PORT=3001
+      - NEXT_PUBLIC_SSH_GATEWAY_PORT=3001
+      - SSH_ENCRYPTION_KEY=${SSH_ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
     volumes:
       # Named volume for data persistence (Docker handles permissions)
       - sentry-data:/app/data
