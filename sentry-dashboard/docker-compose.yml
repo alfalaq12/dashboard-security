@@ -16,6 +16,9 @@ services:
     environment:
       - NODE_ENV=production
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key}
+      # Database - use sqlite for persistence
+      - DB_TYPE=sqlite
+      - DB_FILENAME=sentry.db
       # SSH Remote Feature
       - SSH_GATEWAY_PORT=3004
       - NEXT_PUBLIC_SSH_GATEWAY_PORT=3004
