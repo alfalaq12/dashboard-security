@@ -2,10 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /*
-   * Enable standalone output for Docker deployment
-   * This creates a minimal production bundle with all dependencies
+   * Note: Standalone mode disabled for custom server.js support
+   * Using full node_modules in Docker instead
    */
-  output: 'standalone',
 
   /*
    * External packages
