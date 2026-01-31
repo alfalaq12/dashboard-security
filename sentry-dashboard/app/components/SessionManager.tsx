@@ -93,15 +93,29 @@ export default function SessionManager() {
                 showCancelButton: true,
                 reverseButtons: true,
                 allowOutsideClick: false,
-                customClass: {
-                    popup: 'swal-session-warning',
-                }
-            }).then((result: { isConfirmed?: boolean; isDismissed?: boolean }) => {
+                background: '#1a1a28',
+                color: '#e4e4e7',
+                confirmButtonColor: '#7c5cff',
+                cancelButtonColor: '#3a3a4a',
+            }).then((result) => {
                 if (result.isConfirmed) {
                     // User menekan "Lanjutkan" - reset activity
                     resetActivity();
-                } else if (result.isDismissed) {
-                    // User menekan "Logout Sekarang"
+
+                    // Show success toast
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Session Diperpanjang',
+                        text: 'Session Anda berhasil diperpanjang selama 30 menit.',
+                        timer: 2000,
+                        showConfirmButton: false,
+                        background: '#1a1a28',
+                        color: '#e4e4e7',
+                        toast: true,
+                        position: 'top-end',
+                    });
+                } else if (result.dismiss === Swal.DismissReason.cancel) {
+                    // User menekan "Logout"
                     if (checkIntervalRef.current) {
                         clearInterval(checkIntervalRef.current);
                     }
