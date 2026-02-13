@@ -15,7 +15,8 @@ interface FileManagerProps {
     agentId?: string;
 }
 
-const GATEWAY_PORT = 3004; // Should be env var but hardcoded for now matching ssh-gateway.ts
+const GATEWAY_PORT = process.env.NEXT_PUBLIC_SSH_GATEWAY_PORT || 3004;
+const AGENT_GATEWAY_WS_URL = process.env.NEXT_PUBLIC_AGENT_GATEWAY_WS_URL;
 
 // Icons
 const FolderIcon = () => (
@@ -83,7 +84,15 @@ export default function FileManager({ credentialId, agentId }: FileManagerProps)
         if (!agentId) return;
 
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.hostname}:${GATEWAY_PORT}/terminal?agentId=${agentId}`;
+
+        let wsUrl;
+        if (AGENT_GATEWAY_WS_URL) {
+            wsUrl = `${AGENT_GATEWAY_WS_URL}/terminal?agentId=${encodeURIComponent(agentId)}`;
+        } else {
+            wsUrl = `${protocol}//${window.location.hostname}:${GATEWAY_PORT}/terminal?agentId=${encodeURIComponent(agentId)}`;
+        }
+
+        console.log('FileManager connecting to:', wsUrl);
         const ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
