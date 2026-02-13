@@ -424,11 +424,15 @@ export default function SSHConsolePage() {
                             <p>Select a credential or remote agent to connect</p>
                         </div>
                     ) : connectionMode === 'agent' && selectedAgent ? (
-                        <RemoteTerminal
-                            agentId={selectedAgent.id}
-                            nodeName={selectedAgent.nodeName}
-                            onDisconnect={() => setSelectedAgent(null)}
-                        />
+                        activeTab === 'terminal' ? (
+                            <RemoteTerminal
+                                agentId={selectedAgent.id}
+                                nodeName={selectedAgent.nodeName}
+                                onDisconnect={() => setSelectedAgent(null)}
+                            />
+                        ) : (
+                            <FileManager agentId={selectedAgent.id} />
+                        )
                     ) : selectedCredential && activeTab === 'terminal' ? (
                         <Terminal
                             credentialId={selectedCredential.id}

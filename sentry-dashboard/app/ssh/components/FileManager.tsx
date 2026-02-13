@@ -1,6 +1,4 @@
-'use client';
-
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Swal from 'sweetalert2';
 
 interface FileInfo {
@@ -13,8 +11,11 @@ interface FileInfo {
 }
 
 interface FileManagerProps {
-    credentialId: number | null;
+    credentialId?: number | null;
+    agentId?: string;
 }
+
+const GATEWAY_PORT = 3004; // Should be env var but hardcoded for now matching ssh-gateway.ts
 
 // Icons
 const FolderIcon = () => (
@@ -68,12 +69,88 @@ const DeleteIcon = () => (
     </svg>
 );
 
-export default function FileManager({ credentialId }: FileManagerProps) {
+export default function FileManager({ credentialId, agentId }: FileManagerProps) {
     const [currentPath, setCurrentPath] = useState('/');
     const [files, setFiles] = useState<FileInfo[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<FileInfo | null>(null);
+    const wsRef = useRef<WebSocket | null>(null);
+    const pendingRequests = useRef<Map<string, (data: any) => void>>(new Map());
+
+    // Initialize WebSocket for Agent
+    useEffect(() => {
+        if (!agentId) return;
+
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.hostname}:${GATEWAY_PORT}/terminal?agentId=${agentId}`;
+        const ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+            console.log('FileManager connected to agent');
+        };
+
+        ws.onmessage = (event) => {
+            try {
+                const msg = JSON.parse(event.data);
+
+                if (msg.type === 'connected') return;
+
+                // Handle generic response
+                // For simplicity, we assume we are waiting for a specific type response based on our action
+                // In a real app, we should use a requestId
+
+                // Trigger callback if generic handler exists for this type
+                const handler = pendingRequests.current.get(msg.type);
+                if (handler) {
+                    handler(msg);
+                    pendingRequests.current.delete(msg.type); // One-time handler
+                } else if (msg.type === 'error') {
+                    setError(msg.error || 'Unknown agent error');
+                }
+            } catch (err) {
+                console.error('Failed to parse WS message', err);
+            }
+        };
+
+        ws.onerror = (err) => {
+            console.error('FileManager WS Error', err);
+            setError('Connection error');
+        };
+
+        wsRef.current = ws;
+
+        return () => {
+            ws.close();
+            wsRef.current = null;
+        };
+    }, [agentId]);
+
+    // Helper to send WS request and wait for response
+    const sendAgentRequest = (type: string, data: any, responseType: string): Promise<any> => {
+        return new Promise((resolve, reject) => {
+            if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+                reject(new Error('WebSocket not connected'));
+                return;
+            }
+
+            // Register handler
+            pendingRequests.current.set(responseType, (msg) => {
+                if (msg.error) reject(new Error(msg.error));
+                else resolve(msg.data);
+            });
+
+            // Set timeout
+            setTimeout(() => {
+                if (pendingRequests.current.has(responseType)) {
+                    pendingRequests.current.delete(responseType);
+                    reject(new Error('Request timed out'));
+                }
+            }, 10000);
+
+            wsRef.current.send(JSON.stringify({ type, data }));
+        });
+    };
 
     const formatSize = (bytes: number): string => {
         if (bytes === 0) return '0 B';
@@ -95,34 +172,42 @@ export default function FileManager({ credentialId }: FileManagerProps) {
     };
 
     const loadDirectory = useCallback(async (path: string) => {
-        if (!credentialId) return;
+        if (!credentialId && !agentId) return;
 
         setIsLoading(true);
         setError(null);
 
         try {
-            const response = await fetch(`/api/ssh/sftp?credentialId=${credentialId}&path=${encodeURIComponent(path)}&action=list`);
-            const data = await response.json();
+            if (agentId) {
+                // Agent - WebSocket
+                const files = await sendAgentRequest('file_list', path, 'file_list');
+                setFiles(files);
+                setCurrentPath(path);
+            } else if (credentialId) {
+                // SSH - HTTP
+                const response = await fetch(`/api/ssh/sftp?credentialId=${credentialId}&path=${encodeURIComponent(path)}&action=list`);
+                const data = await response.json();
 
-            if (data.success) {
-                setFiles(data.files);
-                setCurrentPath(data.currentPath);
-            } else {
-                setError(data.error || 'Failed to load directory');
+                if (data.success) {
+                    setFiles(data.files);
+                    setCurrentPath(data.currentPath);
+                } else {
+                    setError(data.error || 'Failed to load directory');
+                }
             }
-        } catch (err) {
-            setError('Failed to connect');
+        } catch (err: any) {
+            setError(err.message || 'Failed to connect');
             console.error(err);
         } finally {
             setIsLoading(false);
         }
-    }, [credentialId]);
+    }, [credentialId, agentId]); // Added agentId dependency and removed manual sendAgentRequest dependency as it is defined outside or using refs
 
     useEffect(() => {
-        if (credentialId) {
+        if (credentialId || agentId) {
             loadDirectory('/');
         }
-    }, [credentialId, loadDirectory]);
+    }, [credentialId, agentId, loadDirectory]);
 
     const navigateUp = () => {
         if (currentPath === '/') return;
@@ -141,26 +226,53 @@ export default function FileManager({ credentialId }: FileManagerProps) {
     };
 
     const handleDownload = async (file: FileInfo) => {
-        if (!credentialId) return;
+        if (!credentialId && !agentId) return;
 
         try {
-            const response = await fetch(`/api/ssh/sftp?credentialId=${credentialId}&path=${encodeURIComponent(file.path)}&action=download`);
-            if (response.ok) {
-                const blob = await response.blob();
+            if (agentId) {
+                const contentBase64 = await sendAgentRequest('file_read', file.path, 'file_read');
+                // Convert Base64 to Blob
+                const byteCharacters = atob(contentBase64);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: 'application/octet-stream' });
+
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = file.name;
                 a.click();
                 window.URL.revokeObjectURL(url);
+
+            } else if (credentialId) {
+                const response = await fetch(`/api/ssh/sftp?credentialId=${credentialId}&path=${encodeURIComponent(file.path)}&action=download`);
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = file.name;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                }
             }
         } catch (err) {
             console.error('Download error:', err);
+            Swal.fire({
+                icon: 'error',
+                title: 'Download Failed',
+                text: 'Could not download file',
+                background: '#1a1a28',
+                color: '#e4e4e7',
+            });
         }
     };
 
     const handleDelete = async (file: FileInfo) => {
-        if (!credentialId) return;
+        if (!credentialId && !agentId) return;
 
         const result = await Swal.fire({
             title: 'Delete File?',
@@ -178,12 +290,8 @@ export default function FileManager({ credentialId }: FileManagerProps) {
         if (!result.isConfirmed) return;
 
         try {
-            const response = await fetch(
-                `/api/ssh/sftp?credentialId=${credentialId}&path=${encodeURIComponent(file.path)}&type=${file.type}`,
-                { method: 'DELETE' }
-            );
-            const data = await response.json();
-            if (data.success) {
+            if (agentId) {
+                await sendAgentRequest('file_delete', file.path, 'file_delete');
                 Swal.fire({
                     icon: 'success',
                     title: 'Deleted!',
@@ -194,64 +302,112 @@ export default function FileManager({ credentialId }: FileManagerProps) {
                     color: '#e4e4e7',
                 });
                 loadDirectory(currentPath);
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: data.error || 'Delete failed',
-                    background: '#1a1a28',
-                    color: '#e4e4e7',
-                });
+            } else if (credentialId) {
+                const response = await fetch(
+                    `/api/ssh/sftp?credentialId=${credentialId}&path=${encodeURIComponent(file.path)}&type=${file.type}`,
+                    { method: 'DELETE' }
+                );
+                const data = await response.json();
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Deleted!',
+                        text: `${file.name} has been deleted.`,
+                        timer: 1500,
+                        showConfirmButton: false,
+                        background: '#1a1a28',
+                        color: '#e4e4e7',
+                    });
+                    loadDirectory(currentPath);
+                } else {
+                    throw new Error(data.error || 'Delete failed');
+                }
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('Delete error:', err);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: err.message || 'Delete failed',
+                background: '#1a1a28',
+                color: '#e4e4e7',
+            });
         }
     };
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!credentialId || !e.target.files?.length) return;
+        if ((!credentialId && !agentId) || !e.target.files?.length) return;
 
         const file = e.target.files[0];
-        const formData = new FormData();
-        formData.append('file', file);
-
         const uploadPath = currentPath === '/' ? `/${file.name}` : `${currentPath}/${file.name}`;
 
         try {
-            const response = await fetch(
-                `/api/ssh/sftp?credentialId=${credentialId}&path=${encodeURIComponent(uploadPath)}&action=upload`,
-                { method: 'POST', body: formData }
-            );
-            const data = await response.json();
-            if (data.success) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Uploaded!',
-                    text: `${file.name} uploaded successfully.`,
-                    timer: 1500,
-                    showConfirmButton: false,
-                    background: '#1a1a28',
-                    color: '#e4e4e7',
-                });
-                loadDirectory(currentPath);
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Upload Failed',
-                    text: data.error || 'Upload failed',
-                    background: '#1a1a28',
-                    color: '#e4e4e7',
-                });
+            if (agentId) {
+                // Convert file to Base64
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = async () => {
+                    const base64Content = (reader.result as string).split(',')[1];
+                    try {
+                        await sendAgentRequest('file_write', { path: uploadPath, content: base64Content }, 'file_write');
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Uploaded!',
+                            text: `${file.name} uploaded successfully.`,
+                            timer: 1500,
+                            showConfirmButton: false,
+                            background: '#1a1a28',
+                            color: '#e4e4e7',
+                        });
+                        loadDirectory(currentPath);
+                    } catch (err: any) {
+                        throw err;
+                    }
+                };
+                reader.onerror = (error) => {
+                    throw new Error('Failed to read file');
+                };
+
+            } else if (credentialId) {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch(
+                    `/api/ssh/sftp?credentialId=${credentialId}&path=${encodeURIComponent(uploadPath)}&action=upload`,
+                    { method: 'POST', body: formData }
+                );
+                const data = await response.json();
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Uploaded!',
+                        text: `${file.name} uploaded successfully.`,
+                        timer: 1500,
+                        showConfirmButton: false,
+                        background: '#1a1a28',
+                        color: '#e4e4e7',
+                    });
+                    loadDirectory(currentPath);
+                } else {
+                    throw new Error(data.error || 'Upload failed');
+                }
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('Upload error:', err);
+            Swal.fire({
+                icon: 'error',
+                title: 'Upload Failed',
+                text: err.message || 'Upload failed',
+                background: '#1a1a28',
+                color: '#e4e4e7',
+            });
         }
 
         e.target.value = '';
     };
 
     const handleNewFolder = async () => {
-        if (!credentialId) return;
+        if (!credentialId && !agentId) return;
 
         const { value: folderName } = await Swal.fire({
             title: 'Create New Folder',
@@ -278,12 +434,8 @@ export default function FileManager({ credentialId }: FileManagerProps) {
         const folderPath = currentPath === '/' ? `/${folderName}` : `${currentPath}/${folderName}`;
 
         try {
-            const response = await fetch(
-                `/api/ssh/sftp?credentialId=${credentialId}&path=${encodeURIComponent(folderPath)}&action=mkdir`,
-                { method: 'POST' }
-            );
-            const data = await response.json();
-            if (data.success) {
+            if (agentId) {
+                await sendAgentRequest('file_mkdir', folderPath, 'file_mkdir');
                 Swal.fire({
                     icon: 'success',
                     title: 'Created!',
@@ -294,17 +446,36 @@ export default function FileManager({ credentialId }: FileManagerProps) {
                     color: '#e4e4e7',
                 });
                 loadDirectory(currentPath);
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: data.error || 'Failed to create folder',
-                    background: '#1a1a28',
-                    color: '#e4e4e7',
-                });
+            } else if (credentialId) {
+                const response = await fetch(
+                    `/api/ssh/sftp?credentialId=${credentialId}&path=${encodeURIComponent(folderPath)}&action=mkdir`,
+                    { method: 'POST' }
+                );
+                const data = await response.json();
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Created!',
+                        text: `Folder "${folderName}" created.`,
+                        timer: 1500,
+                        showConfirmButton: false,
+                        background: '#1a1a28',
+                        color: '#e4e4e7',
+                    });
+                    loadDirectory(currentPath);
+                } else {
+                    throw new Error(data.error || 'Failed to create folder');
+                }
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('Mkdir error:', err);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: err.message || 'Failed to create folder',
+                background: '#1a1a28',
+                color: '#e4e4e7',
+            });
         }
     };
 
@@ -329,7 +500,7 @@ export default function FileManager({ credentialId }: FileManagerProps) {
             }}>
                 <button
                     onClick={() => loadDirectory(currentPath)}
-                    disabled={isLoading || !credentialId}
+                    disabled={isLoading || (!credentialId && !agentId)}
                     style={{
                         padding: '6px 10px',
                         background: 'rgba(124, 92, 255, 0.2)',
@@ -359,13 +530,13 @@ export default function FileManager({ credentialId }: FileManagerProps) {
                     <input
                         type="file"
                         onChange={handleUpload}
-                        disabled={!credentialId}
+                        disabled={!credentialId && !agentId}
                         style={{ display: 'none' }}
                     />
                 </label>
                 <button
                     onClick={handleNewFolder}
-                    disabled={!credentialId}
+                    disabled={!credentialId && !agentId}
                     style={{
                         padding: '6px 10px',
                         background: 'rgba(255, 217, 61, 0.2)',
@@ -424,7 +595,7 @@ export default function FileManager({ credentialId }: FileManagerProps) {
                     <div style={{ textAlign: 'center', padding: '40px', color: '#ff5a5a' }}>
                         {error}
                     </div>
-                ) : !credentialId ? (
+                ) : !credentialId && !agentId ? (
                     <div style={{ textAlign: 'center', padding: '40px', color: '#606078' }}>
                         Select a credential to browse files
                     </div>

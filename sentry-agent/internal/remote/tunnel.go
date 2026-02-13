@@ -21,17 +21,24 @@ const (
 	MsgTypeError      = "error"
 	MsgTypePing       = "ping"
 	MsgTypePong       = "pong"
+
+	// File System Messages
+	MsgTypeFileList   = "file_list"
+	MsgTypeFileRead   = "file_read"
+	MsgTypeFileWrite  = "file_write"
+	MsgTypeFileDelete = "file_delete" // Deletes file or directory
+	MsgTypeFileMkdir  = "file_mkdir"
 )
 
 // Message represents a WebSocket message
 type Message struct {
-	Type      string `json:"type"`
-	SessionID string `json:"sessionId,omitempty"`
-	Data      string `json:"data,omitempty"`
-	Cols      int    `json:"cols,omitempty"`
-	Rows      int    `json:"rows,omitempty"`
-	NodeName  string `json:"nodeName,omitempty"`
-	Error     string `json:"error,omitempty"`
+	Type      string      `json:"type"`
+	SessionID string      `json:"sessionId,omitempty"`
+	Data      interface{} `json:"data,omitempty"` // Change to interface{} to support diverse data
+	Cols      int         `json:"cols,omitempty"`
+	Rows      int         `json:"rows,omitempty"`
+	NodeName  string      `json:"nodeName,omitempty"`
+	Error     string      `json:"error,omitempty"`
 }
 
 // Tunnel manages WebSocket connection to dashboard
@@ -43,6 +50,7 @@ type Tunnel struct {
 	connMu     sync.Mutex
 	terminals  map[string]*Terminal
 	termMu     sync.RWMutex
+	fs         *FileSystem // handler file system
 	done       chan struct{}
 	reconnect  chan struct{}
 }
@@ -54,6 +62,7 @@ func NewTunnel(gatewayURL, nodeName, apiKey string) *Tunnel {
 		nodeName:   nodeName,
 		apiKey:     apiKey,
 		terminals:  make(map[string]*Terminal),
+		fs:         NewFileSystem(),
 		done:       make(chan struct{}),
 		reconnect:  make(chan struct{}, 1),
 	}
@@ -188,6 +197,17 @@ func (t *Tunnel) handleMessage(msg Message) {
 	case MsgTypeCloseShell:
 		t.handleCloseShell(msg)
 
+	case MsgTypeFileList:
+		t.handleFileList(msg)
+	case MsgTypeFileRead:
+		t.handleFileRead(msg)
+	case MsgTypeFileWrite:
+		t.handleFileWrite(msg)
+	case MsgTypeFileDelete:
+		t.handleFileDelete(msg)
+	case MsgTypeFileMkdir:
+		t.handleFileMkdir(msg)
+
 	default:
 		log.Printf("⚠️ Unknown message type: %s", msg.Type)
 	}
@@ -254,7 +274,9 @@ func (t *Tunnel) handleData(msg Message) {
 	t.termMu.RUnlock()
 
 	if exists {
-		term.Write([]byte(msg.Data))
+		if strData, ok := msg.Data.(string); ok {
+			term.Write([]byte(strData))
+		}
 	}
 }
 

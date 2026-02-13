@@ -42,6 +42,13 @@ const MsgType = {
     Error: 'error',
     Ping: 'ping',
     Pong: 'pong',
+
+    // File System
+    FileList: 'file_list',
+    FileRead: 'file_read',
+    FileWrite: 'file_write',
+    FileDelete: 'file_delete',
+    FileMkdir: 'file_mkdir',
 } as const;
 
 interface AgentConnection {
@@ -304,6 +311,11 @@ function handleAgentConnection(ws: WebSocket, nodeName: string, apiKey: string) 
                 case MsgType.Data:
                 case MsgType.CloseShell:
                 case MsgType.Error:
+                case MsgType.FileList:
+                case MsgType.FileRead:
+                case MsgType.FileWrite:
+                case MsgType.FileDelete:
+                case MsgType.FileMkdir:
                     const session = userSessions.get(msg.sessionId);
                     if (session && session.ws.readyState === WebSocket.OPEN) {
                         session.ws.send(JSON.stringify(msg));

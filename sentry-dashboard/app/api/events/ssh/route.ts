@@ -57,6 +57,17 @@ export async function GET() {
                 ...(e.data as SSHEventData),
             }));
 
+        // Filter Active SSH Sessions
+        const activeSessionsEvents = events
+            .filter((e) => e.type === 'active_ssh_sessions')
+            .map((e) => ({
+                id: e.id,
+                nodeName: e.nodeName,
+                timestamp: e.timestamp,
+                data: e.data, // Array of sessions
+            }))
+            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()); // Newest first
+
         // Get failed login counts by IP
         const failedByIP: Record<string, { count: number; users: Set<string>; nodes: Set<string> }> = {};
 
@@ -86,12 +97,14 @@ export async function GET() {
             totalEvents: sshEvents.length,
             allEvents: sshEvents, // semua events untuk chart
             recentEvents: sshEvents.slice(-50).reverse(), // Last 50, newest first
+            activeSessionsHistory: activeSessionsEvents,
             attackers,
             summary: {
                 totalFailed: sshEvents.filter((e) => e.event_type === 'failed').length,
                 totalSuccess: sshEvents.filter((e) => e.event_type === 'success').length,
                 uniqueAttackerIPs: attackers.length,
                 bruteForceIPs: attackers.filter((a) => a.isBruteForce).length,
+                currentActiveSessions: activeSessionsEvents.length > 0 ? activeSessionsEvents[0].data : [],
             },
         });
     } catch (error) {

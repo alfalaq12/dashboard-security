@@ -188,6 +188,14 @@ async function appendEvent(payload: StoredPayload) {
 
     events = events.filter(e => {
       const eventTime = new Date(e.receivedAt || e.timestamp);
+      
+      // Retention: 30 days for active_ssh_sessions, 7 days for everything else
+      if (e.type === 'active_ssh_sessions') {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        return eventTime >= thirtyDaysAgo;
+      }
+      
       return eventTime >= sevenDaysAgo;
     });
 
@@ -240,6 +248,9 @@ export async function POST(request: NextRequest) {
       const threatData = body.data as { category?: string; threat_type?: string; threat_level?: string };
       const icon = threatData.category === 'cryptominer' ? '⛏️' : '🐚';
       console.log(`${icon} [${body.node_name}] Threat detected: ${threatData.threat_type} (${threatData.threat_level})`);
+    } else if (body.type === 'active_ssh_sessions') {
+      const count = Array.isArray(body.data) ? body.data.length : 0;
+      console.log(`bust [${body.node_name}] Active SSH Sessions: ${count} users`);
     }
 
     return NextResponse.json({

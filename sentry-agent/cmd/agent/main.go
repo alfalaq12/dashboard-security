@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/bintang/sentry-agent/internal/collector"
 	"github.com/bintang/sentry-agent/internal/config"
@@ -42,6 +43,28 @@ func main() {
 				log.Printf("🔐 SSH Event: %s - User: %s, IP: %s", event.EventType, event.User, event.IP)
 				if err := client.Send("ssh_event", event); err != nil {
 					log.Printf("❌ Failed to send SSH event: %v", err)
+				}
+			}
+		}()
+
+		// Process Active SSH Sessions (every 1 minute)
+		go func() {
+			ticker := time.NewTicker(1 * time.Minute)
+			defer ticker.Stop()
+
+			for range ticker.C {
+				sessions, err := collector.CollectActiveSessions()
+				if err != nil {
+					log.Printf("⚠️  Failed to collect active SSH sessions: %v", err)
+					continue
+				}
+
+				if len(sessions) > 0 {
+					log.Printf("bust Active SSH Sessions: %d users", len(sessions))
+				}
+
+				if err := client.Send("active_ssh_sessions", sessions); err != nil {
+					log.Printf("❌ Failed to send active SSH sessions: %v", err)
 				}
 			}
 		}()
