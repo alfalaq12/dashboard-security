@@ -414,5 +414,1701 @@
       "memory_sys_bytes": 11948032
     },
     "receivedAt": "2026-02-13T10:03:38.001Z"
+  },
+  {
+    "id": "62f60056-c5a0-47a6-a2ce-9cf65bd2d6b4",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:04:08.1566769+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:04:08.1457557+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1275544,
+      "memory_total_bytes": 50674568,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:04:08.508Z"
+  },
+  {
+    "id": "3e328fe8-45c7-4bb7-b149-06cc7843fb79",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:04:08.2386334+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 5.703484549629648,
+      "memory_percent": 86,
+      "disk_percent": 74.15142869635002,
+      "uptime_seconds": 24201
+    },
+    "receivedAt": "2026-02-13T10:04:08.541Z"
+  },
+  {
+    "id": "58995655-1d1c-4a67-a825-18eb9199325c",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:04:38.0163578+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 6.376653030158881,
+      "memory_percent": 87,
+      "disk_percent": 74.15100440878972,
+      "uptime_seconds": 24231
+    },
+    "receivedAt": "2026-02-13T10:04:38.097Z"
+  },
+  {
+    "id": "af914142-6695-4ce2-8a33-1a1f1829a661",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:04:38.0153256+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:04:38.0145907+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1462192,
+      "memory_total_bytes": 50861216,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:04:38.158Z"
+  },
+  {
+    "id": "98d24b5f-5980-44f1-833d-4426469af536",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:05:07.9703117+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:05:07.9684992+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1595336,
+      "memory_total_bytes": 50994360,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:05:08.045Z"
+  },
+  {
+    "id": "c1e8bba6-cb1f-42ee-b67d-018a8f454f9e",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:05:07.9737596+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 4.680246328762968,
+      "memory_percent": 83,
+      "disk_percent": 74.15081155080776,
+      "uptime_seconds": 24261
+    },
+    "receivedAt": "2026-02-13T10:05:08.168Z"
+  },
+  {
+    "id": "b93ec57d-eee3-4f11-a44e-d2b1a64c0aab",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:05:37.9704133+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 5.273243435051513,
+      "memory_percent": 84,
+      "disk_percent": 74.15075047911347,
+      "uptime_seconds": 24291
+    },
+    "receivedAt": "2026-02-13T10:05:38.014Z"
+  },
+  {
+    "id": "3062d196-1d5a-49fc-81da-a0730d5422a5",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:05:37.9691893+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:05:37.9686024+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1696904,
+      "memory_total_bytes": 51095928,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:05:38.025Z"
+  },
+  {
+    "id": "46819136-0ad9-43a5-9fe1-7e1cd135f317",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:06:07.9707984+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:06:07.9686703+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1575304,
+      "memory_total_bytes": 63617448,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:06:08.044Z"
+  },
+  {
+    "id": "39ce91b4-8628-4b0b-8a37-99dbccc13a63",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:06:07.9797679+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 5.166401783808146,
+      "memory_percent": 82,
+      "disk_percent": 74.15063074644966,
+      "uptime_seconds": 24321
+    },
+    "receivedAt": "2026-02-13T10:06:08.079Z"
+  },
+  {
+    "id": "ec6114b7-a960-470d-b9fc-ebdd71e5a199",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:06:37.9697978+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:06:37.9692548+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1758720,
+      "memory_total_bytes": 63800864,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:06:38.009Z"
+  },
+  {
+    "id": "5ffbfab9-bf0a-407e-9fb4-dbf9e0acb1bf",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:06:37.9707408+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 4.601307189542483,
+      "memory_percent": 83,
+      "disk_percent": 74.15069021099411,
+      "uptime_seconds": 24351
+    },
+    "receivedAt": "2026-02-13T10:06:38.065Z"
+  },
+  {
+    "id": "ace7623c-1bd8-49fb-b630-b875fc9d8988",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:07:07.977868+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 5.353107344641537,
+      "memory_percent": 83,
+      "disk_percent": 74.15038404894774,
+      "uptime_seconds": 24381
+    },
+    "receivedAt": "2026-02-13T10:07:08.113Z"
+  },
+  {
+    "id": "dd19ed35-4d03-4434-bad0-485aff55b881",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:07:07.9748596+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:07:07.9713073+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1892176,
+      "memory_total_bytes": 63934320,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:07:08.125Z"
+  },
+  {
+    "id": "790fb195-eca7-4971-94f5-770ea6cd72fc",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:07:37.9719418+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 7.042286962500355,
+      "memory_percent": 88,
+      "disk_percent": 74.15710514961911,
+      "uptime_seconds": 24411
+    },
+    "receivedAt": "2026-02-13T10:07:38.067Z"
+  },
+  {
+    "id": "1b91f1da-ad77-48dc-b3ce-aca1c091ba72",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:07:37.9703434+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:07:37.9694431+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1993168,
+      "memory_total_bytes": 64035312,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:07:38.087Z"
+  },
+  {
+    "id": "d5d1b2cc-4b69-4ed1-b764-cfaeb09d5051",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:08:07.9707618+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:08:07.9696417+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1174792,
+      "memory_total_bytes": 76616288,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:08:08.033Z"
+  },
+  {
+    "id": "85567a53-b19a-4d54-9e3f-dcb369206654",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:08:07.9748399+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 5.071239980019505,
+      "memory_percent": 89,
+      "disk_percent": 74.15652014707382,
+      "uptime_seconds": 24441
+    },
+    "receivedAt": "2026-02-13T10:08:08.055Z"
+  },
+  {
+    "id": "3f597e3d-c51b-43d8-a3c4-f8745108e043",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:08:37.9748802+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:08:37.9704654+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1327856,
+      "memory_total_bytes": 76769352,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:08:38.062Z"
+  },
+  {
+    "id": "1d6ffdc5-be53-4346-a4ec-847a4cbd4079",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:08:37.9704654+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 4.710657981694811,
+      "memory_percent": 88,
+      "disk_percent": 74.15659166524213,
+      "uptime_seconds": 24471
+    },
+    "receivedAt": "2026-02-13T10:08:38.085Z"
+  },
+  {
+    "id": "0ca11173-7b5c-48df-bfad-84df5134d460",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:09:07.9729118+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 3.9595559640811713,
+      "memory_percent": 87,
+      "disk_percent": 74.15660211171615,
+      "uptime_seconds": 24501
+    },
+    "receivedAt": "2026-02-13T10:09:08.010Z"
+  },
+  {
+    "id": "b542105d-7b18-4eab-a27c-c7e2eac0e579",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:09:07.9707079+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:09:07.9699154+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1494168,
+      "memory_total_bytes": 76935664,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:09:08.022Z"
+  },
+  {
+    "id": "a6ceb64a-3e7e-42a9-8d60-41f5c4f92989",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:09:37.9707163+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 4.40166369575556,
+      "memory_percent": 88,
+      "disk_percent": 74.15669452283251,
+      "uptime_seconds": 24531
+    },
+    "receivedAt": "2026-02-13T10:09:38.042Z"
+  },
+  {
+    "id": "2f0cd7a3-87f8-4924-8ebd-4ac5c3da3e64",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:09:37.9681031+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:09:37.9681031+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1596360,
+      "memory_total_bytes": 77037856,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:09:38.057Z"
+  },
+  {
+    "id": "7113a654-5619-4cd5-8f5e-c4b19b5ebfd9",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:10:07.9692945+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:10:07.9692945+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 3507520,
+      "memory_total_bytes": 89564688,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:10:08.019Z"
+  },
+  {
+    "id": "b4fe5578-2334-475b-a90c-2e29206eca48",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:10:07.9714844+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 4.233390721933763,
+      "memory_percent": 87,
+      "disk_percent": 74.15670255858176,
+      "uptime_seconds": 24561
+    },
+    "receivedAt": "2026-02-13T10:10:08.039Z"
+  },
+  {
+    "id": "79fd1bab-1e6c-4e19-8cad-c7c05bedc163",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:10:37.9701793+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 5.164897649734647,
+      "memory_percent": 86,
+      "disk_percent": 74.15675720167665,
+      "uptime_seconds": 24591
+    },
+    "receivedAt": "2026-02-13T10:10:37.986Z"
+  },
+  {
+    "id": "31a5b338-3820-485f-9cdf-6204e8d4f3ff",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:10:37.9689022+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:10:37.9681585+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 636440,
+      "memory_total_bytes": 89751280,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:10:37.989Z"
+  },
+  {
+    "id": "54e8f8f6-6401-451d-82ff-cd572194705c",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:11:07.9711954+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 5.7029993376944965,
+      "memory_percent": 88,
+      "disk_percent": 74.15688014864014,
+      "uptime_seconds": 24621
+    },
+    "receivedAt": "2026-02-13T10:11:08.027Z"
+  },
+  {
+    "id": "afbf96ea-950f-4f5b-a304-0fc06b6d10c4",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:11:07.9690481+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:11:07.9690481+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 747760,
+      "memory_total_bytes": 89862600,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:11:08.039Z"
+  },
+  {
+    "id": "fe3e8d6b-7303-4674-9cf0-14b596654d62",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:11:37.9716191+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 5.892802160053705,
+      "memory_percent": 88,
+      "disk_percent": 74.15703041715109,
+      "uptime_seconds": 24651
+    },
+    "receivedAt": "2026-02-13T10:11:37.994Z"
+  },
+  {
+    "id": "4c997ba1-db85-45a2-85b3-f816d1aeafa4",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:11:37.969275+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:11:37.9680189+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 882632,
+      "memory_total_bytes": 89997472,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:11:38.002Z"
+  },
+  {
+    "id": "47f345ff-c5c7-46a9-9faa-000118a5c366",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:12:07.9784717+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 4.511224779766979,
+      "memory_percent": 90,
+      "disk_percent": 74.15707220304718,
+      "uptime_seconds": 24681
+    },
+    "receivedAt": "2026-02-13T10:12:08.006Z"
+  },
+  {
+    "id": "84517b65-fc27-439b-961e-29c141f343c4",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:12:07.9719941+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:12:07.9699435+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 976432,
+      "memory_total_bytes": 102511144,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:12:08.011Z"
+  },
+  {
+    "id": "05c4005c-d6bd-4114-aa11-eb2a999328df",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:12:37.967587+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:12:37.967587+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1160264,
+      "memory_total_bytes": 102694976,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:12:38.010Z"
+  },
+  {
+    "id": "cd8913e9-bc9b-49e5-8d3b-e69866b4c01b",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:12:37.970172+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 6.330314381897545,
+      "memory_percent": 92,
+      "disk_percent": 74.16166383016773,
+      "uptime_seconds": 24711
+    },
+    "receivedAt": "2026-02-13T10:12:38.014Z"
+  },
+  {
+    "id": "f735f77d-dbe6-4155-a2f1-4df47ab4b011",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:13:07.9679795+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:13:07.9679795+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1294512,
+      "memory_total_bytes": 102829224,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:13:08.009Z"
+  },
+  {
+    "id": "c43a9ac5-911d-47ea-978e-9e15f1648f29",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:13:07.973034+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 6.0517982891441,
+      "memory_percent": 93,
+      "disk_percent": 74.16635670772878,
+      "uptime_seconds": 24741
+    },
+    "receivedAt": "2026-02-13T10:13:08.017Z"
+  },
+  {
+    "id": "63363c7d-3815-45a1-9387-8cb5fa71a945",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:13:37.9677964+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:13:37.9677964+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1395200,
+      "memory_total_bytes": 102929912,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:13:38.030Z"
+  },
+  {
+    "id": "9f5c2ba0-8ea6-41b9-bf6e-93fd5118b533",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:13:37.9720468+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 5.337005294279167,
+      "memory_percent": 92,
+      "disk_percent": 74.16654554783612,
+      "uptime_seconds": 24771
+    },
+    "receivedAt": "2026-02-13T10:13:38.043Z"
+  },
+  {
+    "id": "4bbb4367-cb15-4a08-a828-d8883ecad3b4",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:14:07.9732559+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 4.178667548042872,
+      "memory_percent": 89,
+      "disk_percent": 74.16659858378117,
+      "uptime_seconds": 24801
+    },
+    "receivedAt": "2026-02-13T10:14:08.022Z"
+  },
+  {
+    "id": "8b987675-cc52-4f8c-a0a4-7a075b0622a2",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:14:07.969885+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:14:07.9682939+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 800648,
+      "memory_total_bytes": 115385712,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:14:08.036Z"
+  },
+  {
+    "id": "cf5162ac-58bb-4339-915d-a9a09b76ee49",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:14:37.9727786+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 3.8405848702882226,
+      "memory_percent": 89,
+      "disk_percent": 74.16668938774767,
+      "uptime_seconds": 24831
+    },
+    "receivedAt": "2026-02-13T10:14:38.026Z"
+  },
+  {
+    "id": "f203a003-07c1-4cc4-a4f6-6f52a2e5d025",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:14:37.9691916+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:14:37.9681454+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 954056,
+      "memory_total_bytes": 115539120,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:14:38.041Z"
+  },
+  {
+    "id": "bf3feb51-c74f-40be-9023-1f1d7744881f",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:15:07.9729426+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 3.767082871093716,
+      "memory_percent": 86,
+      "disk_percent": 74.16669179847244,
+      "uptime_seconds": 24861
+    },
+    "receivedAt": "2026-02-13T10:15:08.019Z"
+  },
+  {
+    "id": "176f91ca-722c-4d2e-8a50-ae61155119fc",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:15:07.9703187+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:15:07.9684876+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1088704,
+      "memory_total_bytes": 115673768,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:15:08.033Z"
+  },
+  {
+    "id": "4b93e4f5-c445-4a1b-ba35-04311c2ffd56",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:15:37.9705491+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 3.8445098784194527,
+      "memory_percent": 86,
+      "disk_percent": 74.1667062628211,
+      "uptime_seconds": 24891
+    },
+    "receivedAt": "2026-02-13T10:15:38.014Z"
+  },
+  {
+    "id": "083beb60-0822-4af3-9cb6-c168be75e6a6",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:15:37.9686934+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:15:37.9681257+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1221928,
+      "memory_total_bytes": 115806992,
+      "memory_sys_bytes": 11948032
+    },
+    "receivedAt": "2026-02-13T10:15:38.033Z"
+  },
+  {
+    "id": "5794afcf-ffa8-4f39-aa6a-55c79e787755",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:16:07.9684785+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:16:07.9679005+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 5475248,
+      "memory_total_bytes": 128311544,
+      "memory_sys_bytes": 16142336
+    },
+    "receivedAt": "2026-02-13T10:16:08.021Z"
+  },
+  {
+    "id": "ac79d92d-29b8-4ab9-8ab2-85daeb516482",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:16:07.9702671+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 3.6882245991830183,
+      "memory_percent": 86,
+      "disk_percent": 74.16671429857034,
+      "uptime_seconds": 24921
+    },
+    "receivedAt": "2026-02-13T10:16:08.049Z"
+  },
+  {
+    "id": "d8d748dc-2440-4061-896f-c1df44e003cb",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:16:37.9672708+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:16:37.9672708+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 5625808,
+      "memory_total_bytes": 128462104,
+      "memory_sys_bytes": 16142336
+    },
+    "receivedAt": "2026-02-13T10:16:38.018Z"
+  },
+  {
+    "id": "801e8930-1552-4272-81b6-dea9e439f520",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:16:37.9706436+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 3.478878239253423,
+      "memory_percent": 86,
+      "disk_percent": 74.16674001296794,
+      "uptime_seconds": 24951
+    },
+    "receivedAt": "2026-02-13T10:16:38.030Z"
+  },
+  {
+    "id": "af972d02-d1e3-4275-9a00-371dbf0a468a",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:17:07.9701174+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 3.562804791439799,
+      "memory_percent": 85,
+      "disk_percent": 74.16673519151838,
+      "uptime_seconds": 24981
+    },
+    "receivedAt": "2026-02-13T10:17:08.018Z"
+  },
+  {
+    "id": "2bbf8e15-9c11-4825-bcb7-d32c5219aa5a",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:17:07.9686422+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:17:07.9681317+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 5760056,
+      "memory_total_bytes": 128596352,
+      "memory_sys_bytes": 16142336
+    },
+    "receivedAt": "2026-02-13T10:17:08.042Z"
+  },
+  {
+    "id": "b22cda78-fd72-4879-a2ad-59616103f725",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:17:37.9685727+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:17:37.9679736+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 5860520,
+      "memory_total_bytes": 128696816,
+      "memory_sys_bytes": 16404480
+    },
+    "receivedAt": "2026-02-13T10:17:38.034Z"
+  },
+  {
+    "id": "d343a12a-196a-4d06-934c-7a9418ff111a",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:17:37.9781979+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 3.8941954445342257,
+      "memory_percent": 85,
+      "disk_percent": 74.16676331664075,
+      "uptime_seconds": 25011
+    },
+    "receivedAt": "2026-02-13T10:17:38.051Z"
+  },
+  {
+    "id": "787ebdaf-f015-4cfb-9350-def041baade3",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:18:07.9713066+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 5.504695668647719,
+      "memory_percent": 86,
+      "disk_percent": 74.16675688804135,
+      "uptime_seconds": 25041
+    },
+    "receivedAt": "2026-02-13T10:18:08.017Z"
+  },
+  {
+    "id": "4369f3b5-8e75-47b0-8dd7-445f8e868d44",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:18:07.967538+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:18:07.967538+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 5345000,
+      "memory_total_bytes": 141247288,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:18:08.029Z"
+  },
+  {
+    "id": "5f16edd1-6366-4f27-aac4-5a0e0bcd20c7",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:18:37.967955+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:18:37.9673618+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 5529200,
+      "memory_total_bytes": 141431488,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:18:38.042Z"
+  },
+  {
+    "id": "21925d49-4258-4bf3-808d-673d6aa4bbd6",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:18:37.9698287+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 5.552655308225877,
+      "memory_percent": 80,
+      "disk_percent": 74.16678822746341,
+      "uptime_seconds": 25071
+    },
+    "receivedAt": "2026-02-13T10:18:38.066Z"
+  },
+  {
+    "id": "8c7333ec-6679-4936-a0c4-2eb0983025a7",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:19:07.9694938+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 3.866685563114135,
+      "memory_percent": 80,
+      "disk_percent": 74.16681233471117,
+      "uptime_seconds": 25101
+    },
+    "receivedAt": "2026-02-13T10:19:08.010Z"
+  },
+  {
+    "id": "a8c67b46-d848-4ed5-a4b8-848ed62a92fd",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:19:07.9679158+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:19:07.9679158+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 5697176,
+      "memory_total_bytes": 141599464,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:19:08.019Z"
+  },
+  {
+    "id": "2feee240-f081-4a6b-82ea-47731d848b41",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:19:37.9676638+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:19:37.9671111+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 5830000,
+      "memory_total_bytes": 141732288,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:19:38.036Z"
+  },
+  {
+    "id": "8d6c9ecf-92be-4f18-b510-074500414e0a",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:19:37.9705832+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 3.8308457711442783,
+      "memory_percent": 79,
+      "disk_percent": 74.16690876370214,
+      "uptime_seconds": 25131
+    },
+    "receivedAt": "2026-02-13T10:19:38.048Z"
+  },
+  {
+    "id": "669b04e4-ac33-4685-b574-dd8654ebfc58",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:20:07.9708656+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 3.995930727737295,
+      "memory_percent": 79,
+      "disk_percent": 74.16689269220366,
+      "uptime_seconds": 25161
+    },
+    "receivedAt": "2026-02-13T10:20:08.028Z"
+  },
+  {
+    "id": "ce64dece-a87e-49f5-a014-85fb280d66e4",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:20:07.9681149+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:20:07.9674221+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 2186256,
+      "memory_total_bytes": 154115024,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:20:08.051Z"
+  },
+  {
+    "id": "01741899-8285-415c-b50b-7482ca2a7ec1",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:20:37.9672985+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:20:37.9672985+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 2368920,
+      "memory_total_bytes": 154297688,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:20:38.022Z"
+  },
+  {
+    "id": "663881e6-a39b-432d-91da-3ba846ae167f",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:20:37.9692994+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 3.8919739902056083,
+      "memory_percent": 79,
+      "disk_percent": 74.16693608524959,
+      "uptime_seconds": 25191
+    },
+    "receivedAt": "2026-02-13T10:20:38.038Z"
+  },
+  {
+    "id": "b324bce6-7a5c-446c-b5d2-b055eac69b89",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:21:07.9680994+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:21:07.967428+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 2471152,
+      "memory_total_bytes": 154399920,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:21:08.030Z"
+  },
+  {
+    "id": "50bd3260-2196-424a-9113-8e4c9bb826c3",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:21:07.9703214+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 3.94693357257591,
+      "memory_percent": 79,
+      "disk_percent": 74.16692322805079,
+      "uptime_seconds": 25221
+    },
+    "receivedAt": "2026-02-13T10:21:08.044Z"
+  },
+  {
+    "id": "d1232917-48ca-4341-a569-25fda8865d9c",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:21:37.9667459+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:21:37.9667459+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 2571072,
+      "memory_total_bytes": 154499840,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:21:38.039Z"
+  },
+  {
+    "id": "65e0bf51-7649-4dca-bcd6-515a88bab903",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:21:37.9701708+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 4.857800232453331,
+      "memory_percent": 80,
+      "disk_percent": 74.1626916024966,
+      "uptime_seconds": 25251
+    },
+    "receivedAt": "2026-02-13T10:21:38.055Z"
+  },
+  {
+    "id": "d5c6fbd5-0d47-4d38-bb29-5767db7881db",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:22:07.9677394+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:22:07.9671217+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 589928,
+      "memory_total_bytes": 167214248,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:22:08.017Z"
+  },
+  {
+    "id": "91aeae52-96d0-46a3-adfd-4128c9641cec",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:22:07.9702424+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 4.31658077630502,
+      "memory_percent": 80,
+      "disk_percent": 74.16183097375209,
+      "uptime_seconds": 25281
+    },
+    "receivedAt": "2026-02-13T10:22:08.048Z"
+  },
+  {
+    "id": "f6d0842c-8242-42db-824a-4e5ac1005548",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:22:37.9680159+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:22:37.9670897+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 773864,
+      "memory_total_bytes": 167398184,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:22:38.031Z"
+  },
+  {
+    "id": "4ffe6d0e-021e-4bba-b282-945d43b45f45",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:22:37.9693036+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 3.404779969650986,
+      "memory_percent": 80,
+      "disk_percent": 74.16193624206724,
+      "uptime_seconds": 25311
+    },
+    "receivedAt": "2026-02-13T10:22:38.053Z"
+  },
+  {
+    "id": "16f00597-a833-40b3-8d06-0d907268fca0",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:23:07.970928+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 3.9109179793590436,
+      "memory_percent": 80,
+      "disk_percent": 74.16202624245882,
+      "uptime_seconds": 25341
+    },
+    "receivedAt": "2026-02-13T10:23:08.019Z"
+  },
+  {
+    "id": "385129b5-862d-4f93-899b-6bc06f6c38ea",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:23:07.9695039+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:23:07.9684719+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 874088,
+      "memory_total_bytes": 167498408,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:23:08.038Z"
+  },
+  {
+    "id": "494baeb1-4df1-48b0-8540-c9a0c14b3444",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:23:37.9695297+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 3.3109279623779777,
+      "memory_percent": 80,
+      "disk_percent": 74.16203909965762,
+      "uptime_seconds": 25371
+    },
+    "receivedAt": "2026-02-13T10:23:38.040Z"
+  },
+  {
+    "id": "a517851d-6b0f-4f74-bb7a-db5851f4cb71",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:23:37.9684754+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:23:37.96676+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1007208,
+      "memory_total_bytes": 167631528,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:23:38.057Z"
+  },
+  {
+    "id": "8238f654-58af-4994-a00e-76ef0e4d9184",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:24:07.9705954+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 4.948390296886691,
+      "memory_percent": 81,
+      "disk_percent": 74.1622649042115,
+      "uptime_seconds": 25401
+    },
+    "receivedAt": "2026-02-13T10:24:08.024Z"
+  },
+  {
+    "id": "5733906e-2b49-40a4-9c39-2830b6bac679",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:24:07.9678987+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:24:07.9667872+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1069096,
+      "memory_total_bytes": 180182712,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:24:08.039Z"
+  },
+  {
+    "id": "8606b3b9-0177-4bcf-b21f-8188b224f02f",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:24:37.9693218+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 4.017994554296558,
+      "memory_percent": 80,
+      "disk_percent": 74.1625011552394,
+      "uptime_seconds": 25431
+    },
+    "receivedAt": "2026-02-13T10:24:38.018Z"
+  },
+  {
+    "id": "ebe73ec6-9d3f-47ba-84ef-1e9773ea9de5",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:24:37.9668129+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:24:37.9668129+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1252576,
+      "memory_total_bytes": 180366192,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:24:38.045Z"
+  },
+  {
+    "id": "635421d7-5d39-438e-b527-37a59eb75c42",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:25:07.9725101+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 4.2465558869655124,
+      "memory_percent": 81,
+      "disk_percent": 74.16230427938282,
+      "uptime_seconds": 25461
+    },
+    "receivedAt": "2026-02-13T10:25:08.057Z"
+  },
+  {
+    "id": "dbac2db8-332d-4c9b-85c3-9d547d2fe87b",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:25:07.9692057+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:25:07.968202+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1386880,
+      "memory_total_bytes": 180500496,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:25:08.068Z"
+  },
+  {
+    "id": "4a1f6241-e4bd-47a0-a41c-0e17cbf060d3",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:25:37.9684929+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 6.738780533989774,
+      "memory_percent": 85,
+      "disk_percent": 74.1621548144468,
+      "uptime_seconds": 25491
+    },
+    "receivedAt": "2026-02-13T10:25:37.999Z"
+  },
+  {
+    "id": "46866047-9451-408c-8963-5497f7185b53",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:25:37.9679376+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:25:37.9664967+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1486792,
+      "memory_total_bytes": 180600408,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:25:38.006Z"
+  },
+  {
+    "id": "8cc474bd-6c3b-4c32-ab1a-0bdc4c3d6751",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:26:07.9702828+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:26:07.9675503+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1474576,
+      "memory_total_bytes": 193320536,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:26:08.019Z"
+  },
+  {
+    "id": "264f6d97-f181-4bd8-bc3d-7e01c35bd07c",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:26:07.9718155+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 5.008050767173114,
+      "memory_percent": 84,
+      "disk_percent": 74.16238222615053,
+      "uptime_seconds": 25521
+    },
+    "receivedAt": "2026-02-13T10:26:08.031Z"
+  },
+  {
+    "id": "41d6b16c-bb5e-4932-8b51-847dd0fe1213",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:26:37.9686164+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:26:37.9673559+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1625304,
+      "memory_total_bytes": 193471264,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:26:37.993Z"
+  },
+  {
+    "id": "9ae7c3dd-a7ac-4975-843e-fd1420d05236",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:26:37.9711816+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 4.546424759871932,
+      "memory_percent": 85,
+      "disk_percent": 74.16241356557259,
+      "uptime_seconds": 25551
+    },
+    "receivedAt": "2026-02-13T10:26:37.996Z"
+  },
+  {
+    "id": "4cce37d4-da5c-418a-9ffb-e77f79a07ed5",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:27:07.971519+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 5.730842005676442,
+      "memory_percent": 87,
+      "disk_percent": 74.1626241022029,
+      "uptime_seconds": 25581
+    },
+    "receivedAt": "2026-02-13T10:27:07.999Z"
+  },
+  {
+    "id": "fea175db-cea9-4fbd-b066-7068ba426b42",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:27:07.9671023+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:27:07.9671023+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1758864,
+      "memory_total_bytes": 193604824,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:27:08.003Z"
+  },
+  {
+    "id": "5d4deefc-d41b-4bf3-95ea-a4ab523907f7",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:27:37.966851+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:27:37.966851+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1859864,
+      "memory_total_bytes": 193705824,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:27:38.000Z"
+  },
+  {
+    "id": "f4b52042-830c-4c83-8038-ec1748a8d25f",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:27:37.9697529+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 8.455238365746293,
+      "memory_percent": 90,
+      "disk_percent": 74.16347589162324,
+      "uptime_seconds": 25611
+    },
+    "receivedAt": "2026-02-13T10:27:38.007Z"
+  },
+  {
+    "id": "69565b6a-54c4-4e0b-998c-27c54e5c2c13",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:28:07.9857046+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 4.005210800585391,
+      "memory_percent": 88,
+      "disk_percent": 74.16350080244591,
+      "uptime_seconds": 25641
+    },
+    "receivedAt": "2026-02-13T10:28:08.011Z"
+  },
+  {
+    "id": "40e43841-8163-4a8f-9959-36b961fb85c4",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:28:07.9803659+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:28:07.9671776+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1434504,
+      "memory_total_bytes": 206417984,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:28:08.017Z"
+  },
+  {
+    "id": "3d880856-837e-44c5-8780-509c3e93ebf4",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:28:37.9666902+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:28:37.9666902+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1617872,
+      "memory_total_bytes": 206601352,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:28:37.998Z"
+  },
+  {
+    "id": "a4c9cbcc-508e-4f82-8cc5-78adf66d8086",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:28:37.9716484+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 3.6048190489715735,
+      "memory_percent": 88,
+      "disk_percent": 74.1636076779109,
+      "uptime_seconds": 25671
+    },
+    "receivedAt": "2026-02-13T10:28:38.006Z"
+  },
+  {
+    "id": "a196e344-b9cc-42e0-8192-ed840c783867",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:29:07.9662931+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:29:07.9662931+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1718752,
+      "memory_total_bytes": 206702232,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:29:07.989Z"
+  },
+  {
+    "id": "8178d38e-cdab-4e8a-a346-ef9ffee147f8",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:29:07.9675562+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 6.865389164909985,
+      "memory_percent": 90,
+      "disk_percent": 74.18161418482671,
+      "uptime_seconds": 25701
+    },
+    "receivedAt": "2026-02-13T10:29:07.992Z"
+  },
+  {
+    "id": "18990d0f-44ed-4f58-bf82-7547f6c3d731",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:29:37.9663188+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:29:37.9663188+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1819184,
+      "memory_total_bytes": 206802664,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:29:38.000Z"
+  },
+  {
+    "id": "81a73131-edbb-4e7a-bf15-a6824d7078d0",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:29:37.9683384+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 4.971106479709524,
+      "memory_percent": 90,
+      "disk_percent": 74.16385116111314,
+      "uptime_seconds": 25731
+    },
+    "receivedAt": "2026-02-13T10:29:38.014Z"
+  },
+  {
+    "id": "249e2fc9-0580-4dfa-acd7-af236002e0b2",
+    "nodeName": "SYNDEV01",
+    "type": "system_stats",
+    "timestamp": "2026-02-13T17:30:07.9842121+07:00",
+    "data": {
+      "timestamp": "2026-02-13T17:30:07.9842121+07:00",
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "num_cpu": 22,
+      "go_routines": 9,
+      "memory_alloc_bytes": 1324056,
+      "memory_total_bytes": 219488352,
+      "memory_sys_bytes": 16928768
+    },
+    "receivedAt": "2026-02-13T10:30:08.014Z"
+  },
+  {
+    "id": "252b1093-4133-4960-9919-8bd690822740",
+    "nodeName": "SYNDEV01",
+    "type": "heartbeat",
+    "timestamp": "2026-02-13T17:30:07.9852484+07:00",
+    "data": {
+      "hostname": "SYNDEV01",
+      "os": "windows",
+      "cpu_percent": 4.240675480712377,
+      "memory_percent": 89,
+      "disk_percent": 74.16384151821404,
+      "uptime_seconds": 25761
+    },
+    "receivedAt": "2026-02-13T10:30:08.017Z"
   }
 ]

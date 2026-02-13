@@ -13,7 +13,6 @@
     "production": "npm run build && npm run start:all"
   },
   "dependencies": {
-    "@types/bcryptjs": "^2.4.6",
     "@types/better-sqlite3": "^7.6.13",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/pg": "^8.16.0",
@@ -23,6 +22,7 @@
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.6.2",
     "jsonwebtoken": "^9.0.3",
+    "lucide-react": "^0.563.0",
     "mysql2": "^3.16.2",
     "next": "16.1.6",
     "pg": "^8.17.2",
@@ -35,6 +35,16 @@
     "ws": "^8.19.0"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/d3-interpolate": "^3.0.4",
+    "@types/d3-path": "^3.1.1",
+    "@types/d3-scale": "^4.0.9",
+    "@types/d3-selection": "^3.0.11",
+    "@types/d3-shape": "^3.1.8",
+    "@types/d3-time": "^3.0.4",
+    "@types/d3-timer": "^3.0.2",
+    "@types/d3-zoom": "^3.0.8",
+    "@types/estree": "^1.0.8",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
